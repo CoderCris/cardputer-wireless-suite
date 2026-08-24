@@ -26,7 +26,10 @@ que avanzas por el roadmap.
 | [`02-abstraction-ladder.md`](02-abstraction-ladder.md) | Los 4 niveles Arduino→registros | Para decidir cómo abordar cada tarea |
 | [`03-libraries/m5unified.md`](03-libraries/m5unified.md) | API de M5Unified/M5Cardputer y qué abstrae | Nivel 1 |
 | [`04-protocols/`](04-protocols/) | Notas por bus/protocolo (SPI, teclado, WiFi, IR...) | Al bajar de nivel |
-| [`roadmap.md`](roadmap.md) | Los 8 hitos y sus dependencias | Para planificar |
+| [`05-vision.md`](05-vision.md) | Objetivo cyberdeck: coprocesadores, enlace, carcasa | Para orientarse a largo plazo |
+| [`06-model/data-model.md`](06-model/data-model.md) | Contrato del store compartido | **Antes del hito 2** |
+| [`06-model/phases.md`](06-model/phases.md) | Fases Sense→Identify→Assess→Interact→Evidence | Al diseñar navegación |
+| [`roadmap.md`](roadmap.md) | Los 8 hitos, el eje de plataforma y sus gates | Para planificar |
 | [`journal/`](journal/) | Diario de decisiones y aprendizajes por hito | Al terminar cada hito |
 | [`glossary.md`](glossary.md) | Términos (register, promiscuous, RMT...) | Referencia rápida |
 | [`references.md`](references.md) | TRM, ESP-IDF, datasheets, enlaces | Cuando necesites la fuente |
@@ -38,3 +41,5 @@ que avanzas por el roadmap.
 - Al terminar un hito, escribe su entrada en `journal/` y crea/actualiza la nota
   de protocolo correspondiente en `04-protocols/`.
 - Cita el TRM por sección concreta (§ + título), nunca "consulta la doc".
+- La visión (`05-vision.md`) describe el destino; el `roadmap.md` manda sobre ella.
+  Si se contradicen, gana el roadmap.
