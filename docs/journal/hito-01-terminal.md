@@ -35,15 +35,38 @@ base entrada→proceso→salida que reutilizarán todos los hitos siguientes.
 
 <!-- Cosas que aún no entiendo del todo y quiero retomar al bajar de nivel. -->
 - ¿Qué hace exactamente `M5.begin()` por debajo, paso a paso? (se desmonta en hito 2)
-- ¿Cómo distingue el driver una pulsación real de un rebote?
+- ~~¿Cómo distingue el driver una pulsación real de un rebote?~~ **Resuelto: no lo
+  distingue.** No hay antirrebote en el driver; lo que filtra repeticiones es
+  `isChange()`, que solo compara el número de teclas pulsadas. Ver
+  [`../04-protocols/gpio-keyboard.md`](../04-protocols/gpio-keyboard.md).
+
+## Pendiente de comprobar en hardware
+
+Cosas que solo se resuelven flasheando y observando. Anota aquí el resultado.
+
+- [ ] **Ghosting.** ¿Lleva diodos la matriz? Pulsa `t`, `u` y `f` a la vez y mira
+      si aparece una `h` fantasma. Procedimiento completo y por qué ese trío en
+      [`../04-protocols/gpio-keyboard.md`](../04-protocols/gpio-keyboard.md).
+- [ ] **Pérdida de teclas al escribir rápido.** ¿Se nota en la práctica el fallo
+      de `isChange()` al solapar dos pulsaciones?
+
+## Deuda conceptual
+
+Conceptos que has decidido aparcar aquí, no abandonar. Índice completo en
+[`../deuda-conceptual.md`](../deuda-conceptual.md).
+
+- **Polimorfismo en C++** (`virtual` / `override` / `std::unique_ptr`), aparcado
+  en el hito 1 al leer el driver del teclado.
 
 ## Checklist de dominio (nivel 1)
 
 Marca cuando puedas explicarlo sin ayuda:
 
 - [ ] Sé qué hace cada línea de `setup()` y `loop()`.
-- [ ] Entiendo por qué `M5.update()` es necesario en cada iteración.
-- [ ] Sé por qué se consulta `isChange()` antes de `lastKeyCode()`.
+- [ ] Entiendo por qué `M5Cardputer.update()` es necesario en cada iteración, y
+      por qué `M5.update()` no basta.
+- [ ] Sé por qué se consulta `isChange()` antes de leer `keysState().word`, y qué
+      caso pierde esa comprobación.
 - [ ] Podría describir qué ocurre en el bus SPI al hacer `println()`.
 
 Cuando marques las cuatro, estás listo para el hito 2 (bajar a nivel 2 quitando
