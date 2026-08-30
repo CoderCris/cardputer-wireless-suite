@@ -31,6 +31,7 @@ que avanzas por el roadmap.
 | [`06-model/phases.md`](06-model/phases.md) | Fases Sense→Identify→Assess→Interact→Evidence | Al diseñar navegación |
 | [`roadmap.md`](roadmap.md) | Los 8 hitos, el eje de plataforma y sus gates | Para planificar |
 | [`journal/`](journal/) | Diario de decisiones y aprendizajes por hito | Al terminar cada hito |
+| [`deuda-conceptual.md`](deuda-conceptual.md) | Conceptos aparcados a propósito y cuándo retomarlos | Cuando te tropieces con uno |
 | [`glossary.md`](glossary.md) | Términos (register, promiscuous, RMT...) | Referencia rápida |
 | [`references.md`](references.md) | TRM, ESP-IDF, datasheets, enlaces | Cuando necesites la fuente |
 
@@ -38,6 +39,9 @@ que avanzas por el roadmap.
 
 - **Una sola fuente de verdad por dato.** El pinout vive solo en `cardputer-map.md`;
   el resto enlaza, no copia.
+- **Distingue lo leído de lo observado.** Lo que sale de leer código o datasheets
+  se documenta como tal; lo que requiere flashear y mirar va como *pendiente de
+  comprobar* hasta que lo compruebes.
 - Al terminar un hito, escribe su entrada en `journal/` y crea/actualiza la nota
   de protocolo correspondiente en `04-protocols/`.
 - Cita el TRM por sección concreta (§ + título), nunca "consulta la doc".
