@@ -53,7 +53,22 @@ como puerto serie. Es lo que transporta `Serial.print()` por el USB-C.
 en vez de usar el periférico dedicado. Máximo control del timing, nivel 4.
 
 **debounce** — Filtrado temporal que descarta los rebotes de un pulsador mecánico
-para no leer una pulsación como varias.
+para no leer una pulsación como varias. Aviso: el driver del teclado del Cardputer
+**no lo implementa**; ver [`04-protocols/gpio-keyboard.md`](04-protocols/gpio-keyboard.md).
+
+**ghosting** — Tecla fantasma que aparece en una matriz sin diodos cuando se
+pulsan tres teclas que forman tres esquinas de un rectángulo en la rejilla: la
+corriente encuentra un camino de vuelta y la cuarta esquina se lee como pulsada.
+Se evita con un diodo por tecla. Pendiente de comprobar en el Cardputer.
+
+**pull-up / pull-down** — Resistencia que fija el nivel en reposo de un pin de
+entrada para que no quede flotando (leyendo ruido). El ESP32-S3 las lleva
+internas y se activan por software (`INPUT_PULLUP`). Con pull-up, reposo = 1 y
+contacto a masa = 0.
+
+**decodificador (demux) 3→8** — Chip que recibe un número binario de 3 bits por
+tres líneas y activa exactamente una de sus 8 salidas. Permite gobernar 8 líneas
+con 3 GPIO; es lo que hace posible el barrido del teclado del Cardputer.
 
 ## Ciberseguridad / blue team
 

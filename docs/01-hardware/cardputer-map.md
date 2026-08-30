@@ -73,13 +73,16 @@ compartidos. Ver [`pin-conflicts.md`](pin-conflicts.md).
 
 | Función | GPIO | Nota |
 |---------|------|------|
-| Teclado matricial | varios | 56 teclas, escaneo por matriz (selección de columna + lectura de filas) |
+| Teclado — selección | 8, 9, 11 | Salidas. Número binario de 3 bits → decodificador 3→8 |
+| Teclado — lectura | 13, 15, 3, 4, 5, 6, 7 | Entradas con pull-up interno. Reposo 1, pulsada 0 |
 | IR TX | 44 | Emisor infrarrojo |
 | IR RX | 46 | Receptor infrarrojo (compartido con mic CLK) |
 | LED de estado | 21 | LED direccionable/simple |
 
-El teclado no es un pin único: es una **matriz** que se escanea seleccionando una
-columna y leyendo el estado de las filas. El detalle del mecanismo va en
+El teclado no es un pin único: es una **matriz** de 8 selecciones × 7 lecturas
+(56 teclas) gobernada por 10 GPIO. Los tres pines de selección no son tres líneas:
+llevan un número de 0 a 7 a un decodificador 3→8 que baja una sola salida. Pines
+extraídos de `IOMatrix.h` del driver, **no del esquemático**. Mecanismo completo en
 [`../04-protocols/gpio-keyboard.md`](../04-protocols/gpio-keyboard.md).
 
 ### Radio y alimentación
