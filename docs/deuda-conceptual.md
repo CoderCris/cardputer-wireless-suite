@@ -28,8 +28,9 @@ solo con la base — la elección de cuál se construye ocurre en un único siti
 construye un `IOMatrixKeyboardReader` (matriz de GPIO, Cardputer V1) o un
 `TCA8418KeyboardReader` (chip I2C, Cardputer ADV). El resto del driver llama a
 `_keyboard_reader->update()` sin enterarse de cuál de los dos es. Ficheros:
-`utility/Keyboard/KeyboardReader/KeyboardReader.h` (la base) y `Keyboard.cpp`
-(la elección).
+`M5Cardputer/src/utility/Keyboard/KeyboardReader/KeyboardReader.h` (la base) y
+`Keyboard.cpp` (la elección); rutas completas en
+[`03-libraries/fuentes-locales.md`](03-libraries/fuentes-locales.md).
 
 **Disparador para retomarlo.** Cuando aparezca la primera situación en la que
 **dos cosas distintas tengan que comportarse igual desde fuera**. En el roadmap

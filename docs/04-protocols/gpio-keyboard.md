@@ -8,7 +8,9 @@ Explicación visual larga (circuito, bits paso a paso, mapa completo):
 [De la tecla al char](https://claude.ai/code/artifact/a4577c2c-8525-4a58-bb54-b0689329acd3).
 
 Todo lo de aquí sale de **leer el driver**, no de observar hardware. Fuente:
-`.pio/libdeps/cardputer/M5Cardputer/src/utility/Keyboard/`, versión **1.1.1**.
+`M5Cardputer/src/utility/Keyboard/`, versión **1.1.1**. Rutas completas y cómo
+buscar una declaración dentro:
+[`../03-libraries/fuentes-locales.md`](../03-libraries/fuentes-locales.md).
 
 ## Por qué una matriz
 

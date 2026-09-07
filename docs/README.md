@@ -25,6 +25,7 @@ que avanzas por el roadmap.
 | [`01-hardware/buses.md`](01-hardware/buses.md) | Qué cuelga de SPI / I2C / I2S | Al tocar cualquier periférico |
 | [`02-abstraction-ladder.md`](02-abstraction-ladder.md) | Los 4 niveles Arduino→registros | Para decidir cómo abordar cada tarea |
 | [`03-libraries/m5unified.md`](03-libraries/m5unified.md) | API de M5Unified/M5Cardputer y qué abstrae | Nivel 1 |
+| [`03-libraries/fuentes-locales.md`](03-libraries/fuentes-locales.md) | Dónde viven en disco las librerías y el framework, y cómo leerlas | Cuando necesites una firma o una declaración |
 | [`04-protocols/`](04-protocols/) | Notas por bus/protocolo (SPI, teclado, WiFi, IR...) | Al bajar de nivel |
 | [`05-vision.md`](05-vision.md) | Objetivo cyberdeck: coprocesadores, enlace, carcasa | Para orientarse a largo plazo |
 | [`06-model/data-model.md`](06-model/data-model.md) | Contrato del store compartido | **Antes del hito 2** |
@@ -44,6 +45,9 @@ que avanzas por el roadmap.
   comprobar* hasta que lo compruebes.
 - Al terminar un hito, escribe su entrada en `journal/` y crea/actualiza la nota
   de protocolo correspondiente en `04-protocols/`.
+- **Las firmas y declaraciones se citan del código instalado**, no de memoria
+  ni de un tutorial. Dónde está ese código:
+  [`03-libraries/fuentes-locales.md`](03-libraries/fuentes-locales.md).
 - Cita el TRM por sección concreta (§ + título), nunca "consulta la doc".
 - La visión (`05-vision.md`) describe el destino; el `roadmap.md` manda sobre ella.
   Si se contradicen, gana el roadmap.

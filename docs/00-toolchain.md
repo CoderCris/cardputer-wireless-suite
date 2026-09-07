@@ -48,6 +48,19 @@ monitor_speed = 115200                      ; baudios del monitor serie
 significa que funcione en hardware: los pines mal, un bus mal configurado o un
 deadlock no dan error de compilación.
 
+## Instalación y dónde acaba cada cosa
+
+`pio` no viene con el sistema. Se instala con `pipx install platformio` o con la
+extensión `platformio.platformio-ide` de VSCode (que deja el CLI en
+`~/.platformio/penv/bin/pio`). La primera compilación descarga toolchain y
+framework a `~/.platformio/`, y las `lib_deps` a `.pio/libdeps/<env>/` dentro del
+repo — ambas rutas están en `.gitignore` o fuera del repo, así que un clon limpio
+no las trae.
+
+Para **solo descargar las librerías y poder leerlas**, sin compilar nada:
+`pio pkg install`. Detalle de rutas y cómo buscar una declaración dentro:
+[`03-libraries/fuentes-locales.md`](03-libraries/fuentes-locales.md).
+
 ## Modo de flasheo del ESP32-S3
 
 Si el upload falla, el S3 puede necesitar entrar en **modo bootloader**

@@ -14,6 +14,10 @@ lib_deps =
 > `Keyboard_Class` y **eliminó `lastKeyCode()`**. Comprueba siempre la versión
 > real con `pio pkg list`, no la del `lib_deps`.
 
+Las firmas y campos que se citan aquí salen de leer los `.h` instalados, no de la
+documentación de M5Stack. Dónde están esos ficheros y cómo buscar en ellos:
+[`fuentes-locales.md`](fuentes-locales.md).
+
 **M5Unified** es la capa de abstracción de M5Stack sobre Arduino-ESP32: unifica
 display, energía, botones y buses para toda la familia de placas M5.
 **M5Cardputer** añade lo específico del Cardputer, sobre todo el **teclado
