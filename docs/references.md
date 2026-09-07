@@ -55,6 +55,14 @@ referencia principal para todo lo que sea registros y periféricos.
 - **PlatformIO — comandos `pio run` / `device monitor`**:
   https://docs.platformio.org/en/latest/core/userguide/
 
+## Las fuentes instaladas también son referencia
+
+Los repos de arriba son la referencia *upstream*; la referencia **operativa** es
+la copia que PlatformIO ha resuelto en tu disco, en la versión exacta que compila
+tu proyecto. Para una firma o una declaración, gana el `.h` local sobre cualquier
+README o tutorial. Rutas y recetas de búsqueda:
+[`03-libraries/fuentes-locales.md`](03-libraries/fuentes-locales.md).
+
 ## Mantenimiento
 
 Cuando uses una fuente que resuelva una duda real, añádela aquí con una nota de
