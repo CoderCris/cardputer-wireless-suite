@@ -20,8 +20,11 @@ referencia principal para todo lo que sea registros y periféricos.
 
 ## Framework
 
-- **ESP-IDF Programming Guide** — API de nivel 2 (HAL/drivers):
-  https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/
+- **ESP-IDF Programming Guide** — API de nivel 2 (HAL/drivers). **Usa `v4.4`, no
+  `latest`**: el core de Arduino instalado empaqueta ESP-IDF 4.4, y en 5.x la API
+  de RMT y la de I2S cambiaron de nombre. Ver
+  [`03-libraries/fuentes-locales.md`](03-libraries/fuentes-locales.md).
+  https://docs.espressif.com/projects/esp-idf/en/v4.4/esp32s3/
   - GPIO: `api-reference/peripherals/gpio`
   - SPI master: `api-reference/peripherals/spi_master`
   - I2C: `api-reference/peripherals/i2c`
