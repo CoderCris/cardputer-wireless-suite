@@ -30,6 +30,7 @@ que avanzas por el roadmap.
 | [`05-vision.md`](05-vision.md) | Objetivo cyberdeck: coprocesadores, enlace, carcasa | Para orientarse a largo plazo |
 | [`06-model/data-model.md`](06-model/data-model.md) | Contrato del store compartido | **Antes del hito 2** |
 | [`06-model/phases.md`](06-model/phases.md) | Fases Sense→Identify→Assess→Interact→Evidence | Al diseñar navegación |
+| [`07-memory-model.md`](07-memory-model.md) | Pila, `.data`/`.bss`, heap: dónde vive cada variable y qué cuesta | Cuando necesites estado que sobreviva a `loop()` |
 | [`roadmap.md`](roadmap.md) | Los 8 hitos, el eje de plataforma y sus gates | Para planificar |
 | [`journal/`](journal/) | Diario de decisiones y aprendizajes por hito | Al terminar cada hito |
 | [`deuda-conceptual.md`](deuda-conceptual.md) | Conceptos aparcados a propósito y cuándo retomarlos | Cuando te tropieces con uno |
