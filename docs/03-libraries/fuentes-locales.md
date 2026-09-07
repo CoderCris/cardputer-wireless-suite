@@ -9,12 +9,14 @@ Este documento dice **dónde está ese fichero** y **cómo encontrar una declara
 dentro de él**. El resto de `docs/` cita rutas relativas a las raíces que se
 definen aquí; esta es la única fuente de verdad para las rutas absolutas.
 
-> **Estado en esta máquina** (comprobado el 2026-09-07): PlatformIO **no está
-> instalado** (`pio` no está en el `PATH`, no existe `~/.platformio`, la extensión
-> `platformio.platformio-ide` no está en VSCode) y el proyecto **no tiene `.pio/`**.
-> Ninguna de las rutas locales de abajo existe todavía. La sección
-> [Cómo hacer aparecer las fuentes](#cómo-hacer-aparecer-las-fuentes) explica cómo
-> materializarlas — no hace falta el Cardputer para eso.
+> **Estado verificado el 2026-09-07** en esta máquina, con la extensión
+> `platformio.platformio-ide` 3.3.4 instalada. Todas las rutas de este documento
+> están comprobadas contra el disco, no supuestas. El CLI **no queda en el
+> `PATH`**: vive en `~/.platformio/penv/bin/pio`. Para usarlo desde una terminal:
+>
+> ```sh
+> export PATH="$HOME/.platformio/penv/bin:$PATH"
+> ```
 
 ## Las dos raíces
 
@@ -39,14 +41,22 @@ librería**, dentro del entorno declarado en `platformio.ini` (aquí `[env:cardp
 
 ```
 <repo>/.pio/libdeps/cardputer/
-├── M5Cardputer/     <- m5stack/M5Cardputer
-├── M5Unified/       <- m5stack/M5Unified
-└── M5GFX/           <- dependencia transitiva: la arrastra M5Unified
+├── M5Cardputer/     1.1.1   <- m5stack/M5Cardputer
+├── M5Unified/       0.2.21  <- transitiva
+├── M5GFX/           0.2.28  <- transitiva
+├── IRremote/        4.7.1   <- transitiva
+└── integrity.dat            <- control interno de PlatformIO, no lo toques
 ```
 
-`M5GFX` no está en `platformio.ini` y aun así aparece: es una **dependencia
-transitiva** (M5Unified la declara en su propio `library.json`). Es donde vive de
-verdad todo lo que hace `M5.Display`.
+Solo `M5Cardputer` sale de `platformio.ini`. Las otras tres son **dependencias
+transitivas**: M5Cardputer las declara en su propio `library.json` y PlatformIO
+las arrastra. Dos consecuencias que importan:
+
+- `M5GFX` es donde vive de verdad todo lo que hace `M5.Display`. M5Unified solo
+  expone la fachada.
+- **`IRremote` ya está en tu disco**, sin que la hayas pedido, porque M5Cardputer
+  la usa para el emisor IR de la placa. En el hito 4 no partirás de cero: partirás
+  de decidir si la usas o la reimplementas sobre RMT.
 
 Dentro de cada una, el código está bajo `src/`. Puntos de entrada que ya se citan
 en el resto de la documentación:
@@ -68,25 +78,53 @@ punto de partida y confirma con `find`, no los copies a ciegas.
 
 Bajo `~/.platformio/`, tres paquetes importan:
 
-| Paquete | Ruta | Qué es |
-|---------|------|--------|
-| Core de Arduino para ESP32 | `~/.platformio/packages/framework-arduinoespressif32/` | `pinMode`, `digitalWrite`, `Serial`, el `main` que llama a tu `setup()`/`loop()` |
-| Toolchain | `~/.platformio/packages/toolchain-xtensa-esp32s3/` | Compilador (`xtensa-esp32s3-elf-gcc`), `binutils`, headers de la libc |
-| Definición de plataforma | `~/.platformio/platforms/espressif32/` | `boards/m5stack-stamps3.json`: flash, RAM, flags base de la placa |
+| Paquete | Ruta | Versión resuelta | Qué es |
+|---------|------|------------------|--------|
+| Core de Arduino para ESP32 | `~/.platformio/packages/framework-arduinoespressif32/` | `3.20017` = core **2.0.17** | `pinMode`, `digitalWrite`, `Serial`, el `main` que llama a tu `setup()`/`loop()` |
+| Toolchain | `~/.platformio/packages/toolchain-xtensa-esp32s3/` | `8.4.0+2021r2-patch5` | Compilador (`xtensa-esp32s3-elf-gcc`), `binutils`, headers de la libc |
+| Definición de plataforma | `~/.platformio/platforms/espressif32/` | `7.1.1` | `boards/m5stack-stamps3.json`: flash, RAM, flags base de la placa |
 
-Dentro del core de Arduino, dos sitios:
+El número del core engaña: `3.20017.241212` **no** es la serie 3.x. El esquema es
+`3` (formato de empaquetado) + `2.00.17` (la versión real de Arduino-ESP32). Estás
+en el core **2.0.17**, no en el 3.
 
-- `cores/esp32/` — la implementación de la capa Arduino. Aquí ves que
-  `digitalWrite()` no es magia: es una función C que acaba llamando a ESP-IDF.
-- Los **headers de ESP-IDF** (`driver/gpio.h`, `esp_wifi.h`, `esp_wifi_types.h`...)
-  van empaquetados con el core, pero su ubicación **cambió entre la serie 2.x y la
-  3.x** del core (en 2.x colgaban de `tools/sdk/esp32s3/include/`; en 3.x se
-  movieron a un paquete de librerías precompiladas aparte). No memorices la ruta:
-  localízala con el `find` de abajo la primera vez y anótala aquí.
+### Dónde están los headers de ESP-IDF
 
-Esos headers son los que vas a necesitar de verdad a partir del hito 3
-(`esp_wifi_set_promiscuous_rx_cb` y la firma de su callback viven en
-`esp_wifi.h` / `esp_wifi_types.h`).
+Verificado en el core 2.0.17:
+
+```
+~/.platformio/packages/framework-arduinoespressif32/
+├── cores/esp32/          <- la capa Arduino: digitalWrite() y compañía
+├── libraries/            <- WiFi.h, SD.h, SPI.h... el "Arduino" de alto nivel
+├── variants/m5stack_stamp_s3/   <- pins_arduino.h de esta placa
+└── tools/sdk/esp32s3/include/   <- ESP-IDF, precompilado, un dir por componente
+```
+
+Dos trampas al buscar ahí:
+
+1. Hay un `tools/sdk/` **por SoC** (`esp32`, `esp32s2`, `esp32s3`, `esp32c3`). Un
+   `find` sin filtrar te devuelve cuatro copias del mismo header. La tuya es
+   `esp32s3`.
+2. La ruta lleva `include` **dos veces**: componente y luego su carpeta pública.
+   Los dos que vas a necesitar:
+
+```
+tools/sdk/esp32s3/include/driver/include/driver/gpio.h
+tools/sdk/esp32s3/include/esp_wifi/include/esp_wifi_types.h
+```
+
+> **ESP-IDF 4.4**, no 5.x. Comprobado en
+> `tools/sdk/esp32s3/include/esp_common/include/esp_idf_version.h`
+> (`ESP_IDF_VERSION_MAJOR 4`, `MINOR 4`). Esto **no es un detalle menor**: entre
+> 4.4 y 5.x Espressif reescribió la API de RMT (`driver/rmt.h` pasó a
+> `driver/rmt_tx.h` / `rmt_rx.h`) y renombró la de I2S. Los ejemplos que
+> encuentres para 5.x **no compilarán** aquí. Cuando consultes el ESP-IDF
+> Programming Guide, fija la versión a `v4.4` en el selector — la portada por
+> defecto es `latest`. Afecta a los hitos 3, 4 y 7.
+
+En el core 3.x esta ubicación cambia: ESP-IDF se movió a un paquete de librerías
+precompiladas aparte. Si algún día actualizas el core, esta sección se queda
+obsoleta — revalida la ruta con el `find` de abajo y actualiza la versión de arriba.
 
 ## Cómo encontrar una declaración
 
@@ -138,17 +176,20 @@ fijar "versión 1.1.1".
 
 ## Cómo hacer aparecer las fuentes
 
-Nada de esto necesita el Cardputer conectado. Son dos pasos.
+Nada de esto necesita el Cardputer conectado. En esta máquina ya está hecho; queda
+anotado para reproducirlo en otra o tras un `git clone` limpio.
 
 **1. Instalar PlatformIO.** Dos vías, equivalentes en cuanto a las rutas de arriba:
 
 ```sh
-pipx install platformio        # CLI independiente (recomendado en Kali)
+pipx install platformio        # CLI independiente
 ```
 
-o instalar la extensión `platformio.platformio-ide` en VSCode, que trae su propio
-Python y deja el CLI en `~/.platformio/penv/bin/pio`. Si usas esa vía, añade esa
-ruta al `PATH` o invócalo con la ruta completa.
+o la extensión `platformio.platformio-ide` de VSCode — que es la vía usada aquí.
+Trae su propio Python, y **el CLI no queda en el `PATH`**: lo deja en
+`~/.platformio/penv/bin/pio`. Al abrir el proyecto, la extensión resuelve las
+dependencias por su cuenta, así que `.pio/libdeps/` puede aparecer sin que hayas
+ejecutado nada.
 
 **2. Descargar las dependencias sin compilar:**
 
@@ -156,9 +197,8 @@ ruta al `PATH` o invócalo con la ruta completa.
 pio pkg install       # resuelve lib_deps -> .pio/libdeps/, sin construir nada
 ```
 
-`pio pkg install` solo descarga; `pio run` además compila y linka (y baja el
-toolchain y el framework, que son cientos de MB, la primera vez). Si lo único que
-quieres es **leer** las librerías de `lib_deps`, `pio pkg install` basta.
+`pio pkg install` solo descarga; `pio run` además compila y linka. Si lo único que
+quieres es **leer** las librerías, `pio pkg install` basta.
 
 **Alternativa sin PlatformIO**: clonar los repos y leerlos ahí, fijando el tag de
 la versión que te interesa. Sirve para leer, no para compilar:

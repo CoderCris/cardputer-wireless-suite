@@ -9,10 +9,14 @@ lib_deps =
     m5stack/M5Cardputer@^1.0.1
 ```
 
-> **Ojo con el caret.** `^1.0.1` autoriza cualquier 1.x, y PlatformIO ha resuelto
-> **M5Cardputer 1.1.1** (y M5Unified **0.2.18**). La 1.1 reorganizó
+> **Ojo con el caret.** `^1.0.1` autoriza cualquier 1.x, y `pio pkg list` resuelve
+> **M5Cardputer 1.1.1**, **M5Unified 0.2.21**, **M5GFX 0.2.28** e **IRremote
+> 4.7.1** (estas tres, transitivas de M5Cardputer). La 1.1 reorganizó
 > `Keyboard_Class` y **eliminó `lastKeyCode()`**. Comprueba siempre la versión
 > real con `pio pkg list`, no la del `lib_deps`.
+>
+> Nota: `M5Unified@^0.2.2` en `lib_deps` es redundante — M5Cardputer ya la
+> arrastra. No hace daño, pero fija un mínimo que no estabas eligiendo tú.
 
 Las firmas y campos que se citan aquí salen de leer los `.h` instalados, no de la
 documentación de M5Stack. Dónde están esos ficheros y cómo buscar en ellos:

@@ -50,12 +50,19 @@ deadlock no dan error de compilación.
 
 ## Instalación y dónde acaba cada cosa
 
-`pio` no viene con el sistema. Se instala con `pipx install platformio` o con la
-extensión `platformio.platformio-ide` de VSCode (que deja el CLI en
-`~/.platformio/penv/bin/pio`). La primera compilación descarga toolchain y
-framework a `~/.platformio/`, y las `lib_deps` a `.pio/libdeps/<env>/` dentro del
-repo — ambas rutas están en `.gitignore` o fuera del repo, así que un clon limpio
-no las trae.
+`pio` no viene con el sistema. Aquí está instalado vía la extensión
+`platformio.platformio-ide` de VSCode, que **no lo pone en el `PATH`**: el CLI
+queda en `~/.platformio/penv/bin/pio`. Para usarlo desde una terminal:
+
+```sh
+export PATH="$HOME/.platformio/penv/bin:$PATH"
+```
+
+La alternativa es `pipx install platformio`, que sí instala un `pio` global.
+
+El toolchain y el framework se descargan a `~/.platformio/`, y las `lib_deps` a
+`.pio/libdeps/<env>/` dentro del repo — la primera está fuera del repo y la
+segunda en `.gitignore`, así que un clon limpio no trae ninguna de las dos.
 
 Para **solo descargar las librerías y poder leerlas**, sin compilar nada:
 `pio pkg install`. Detalle de rutas y cómo buscar una declaración dentro:
