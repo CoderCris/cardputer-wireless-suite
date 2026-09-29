@@ -22,7 +22,7 @@
 
 // 20 caracteres útiles: es lo que cabe en una fila del display del Cardputer
 // (240 px de ancho / 12 px por carácter con setTextSize(2) sobre el font 6x8).
-constexpr uint16_t CAPACIDAD = 64;
+constexpr uint16_t CAPACIDAD = 20;
 
 // Estado persistente entre eventos. En main.cpp serán 'static' dentro de
 // loop(); aquí son globales, misma duración estática: viven en .bss.
@@ -55,6 +55,7 @@ void insertar(char c)
     if (linea_n < CAPACIDAD){
         linea[linea_n] = c;
         linea_n ++;
+        linea[linea_n] = '\0';
     }
 
     // TODO 2: escribir c en la primera casilla libre y avanzar el contador.
@@ -70,6 +71,8 @@ void borrar()
     //   nada. Si restas igualmente, linea_n es un uint8_t y 0 - 1 vale 255.
     if (linea_n > 0 ){
         linea_n --;
+        linea[linea_n] = '\0';
+
     }
     // TODO 5: retroceder el contador y dejar el terminador en su nuevo sitio.
     //   El carácter viejo no hace falta borrarlo: deja de ser válido solo con
@@ -82,7 +85,10 @@ void confirmar()
     // TODO 6: entregar la línea actual con entregar_linea(...) y dejar el
     //   buffer vacío para empezar una nueva. Una línea vacía también se
     //   entrega: confirmar sin haber escrito nada es un salto de línea.
-    linea[linea_n+1] = '\n';
+    
+    entregar_linea(linea);
+    linea_n = 0;
+    linea[linea_n] = '\0';
 }
 
 
