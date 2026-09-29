@@ -115,6 +115,51 @@ Cosas que solo se resuelven flasheando y observando. Anota aquí el resultado.
 - [ ] **Barrido de la pantalla al llegar abajo.** Confirmar que al agotar las
       filas limpia y reanuda arriba sin dejar restos.
 
+## Incidencia abierta: pantalla negra (2026-09-29)
+
+Primer flasheo del hito 1 al dispositivo. Nada de lo anterior se ha podido
+comprobar todavía porque la pantalla no muestra nada.
+
+**Síntoma.** Pantalla en negro al encender, **ya con Bruce** (que antes se veía),
+antes de flashear nada del hito. Tras `pio run -t upload` (upload correcto) sigue
+igual. Desconectar, apagar/encender y reset no cambian nada.
+
+**Descartado.**
+- El chip está vivo: enumera como `303a:1001` (USB Serial/JTAG del S3), estable,
+  y `esptool.py flash_id` responde. Silicio y flash bien.
+- No es la lógica del terminal: `setup()` escribe "Terminal ready" sin esperar
+  teclas, y Bruce también salía en negro.
+- Que el monitor serie no muestre nada es esperado y no es síntoma: el firmware
+  no usa `Serial`, y el log de la ROM se pierde porque el USB se re-enumera en
+  cada reset (no hay conversor USB-UART externo que siga enumerado).
+
+**Hipótesis vigente.** Hardware o alimentación, no software. M5GFX detecta el
+Cardputer leyendo el ID del ST7789 por SPI de 3 hilos (`M5GFX.cpp:2154-2184`);
+si el panel no responde, no inicializa el display ni enciende el backlight
+(GPIO38). Candidatos: batería LiPo muy descargada tras meses sin uso, conexión
+StampS3 ↔ base, o el propio panel.
+
+**Siguientes pasos, en orden.**
+1. [ ] Dejarlo cargando ~30 min con el interruptor en ON. Reintentar.
+2. [ ] En oscuridad: ¿hay brillo tenue de backlight o está muerto del todo?
+3. [ ] Si sigue en negro: flashear Bruce (firmware conocido). Negro con Bruce →
+       hardware confirmado.
+
+**Entorno arreglado de paso.** Usuario añadido a `dialout` (hace falta re-login
+para que el kernel lo cargue en las credenciales del proceso); `pio` enlazado en
+`~/.local/bin`. Pendiente opcional: regla udev mínima para que ModemManager no
+toque `303a:1001`.
+
+**Error encontrado en `docs/`.** El Cardputer V1 **no tiene AXP2101**: M5Unified
+usa `pmic_adc` para `board_M5Cardputer` (batería por ADC en GPIO10, divisor 2:1;
+`Power_Class.cpp:295-301`). Afirman lo contrario `01-hardware/cardputer-map.md`,
+`01-hardware/buses.md`, `03-libraries/m5unified.md`, `glossary.md`,
+`05-vision.md` y el comentario de `src/main.cpp:63`. Pendiente de corregir.
+
+**Latente.** `platformio.ini` usa `default_16MB.csv` con flash de 8 MB: `app1`,
+`spiffs` y `coredump` quedan fuera del chip. Inofensivo mientras solo se use
+`app0`; hay que arreglarlo antes de OTA o sistema de ficheros.
+
 ## Deuda conceptual
 
 Conceptos que has decidido aparcar aquí, no abandonar. Índice completo en
