@@ -13,9 +13,18 @@ necesite un número de pin **enlaza aquí**, no lo copia.
 
 - **SoC**: ESP32-S3 (dual-core Xtensa LX7, WiFi 802.11 b/g/n + Bluetooth 5 LE).
 - **Módulo**: M5Stack StampS3.
-- **PSRAM**: 8 MB (necesaria para buffers grandes; habilitada con
-  `-DBOARD_HAS_PSRAM`, ver [`../00-toolchain.md`](../00-toolchain.md)).
-- **Flash**: 16 MB (tabla de particiones `default_16MB.csv`).
+- **Chip**: ESP32-S3**FN8**. La `F` indica flash dentro del encapsulado y el `8`
+  su tamaño; no lleva `R`, que es la letra de la PSRAM.
+- **Flash**: 8 MB. Lo confirma `"maximum_size": 8388608` en
+  `~/.platformio/platforms/espressif32/boards/m5stack-stamps3.json`. Tabla de
+  particiones: `default_8MB.csv`.
+- **PSRAM**: **probablemente ninguna** (leído, pendiente de observar). Esta tabla
+  decía "8 MB", seguramente por confundirla con la flash. Hay dos indicios
+  independientes. El primero es el nombre del chip. El segundo está en el propio
+  pinout: una PSRAM octal ocupa en el S3 los pads 33 a 37, y el display usa
+  exactamente 33, 34, 35, 36 y 37. Se confirma flasheando
+  `ESP.getPsramSize()` (micro-tarea en
+  [`../06-model/data-model.md`](../06-model/data-model.md)).
 - **USB**: USB-C nativo del ESP32-S3 (CDC/JTAG), sin chip UART externo.
 
 ## Pinout por bus/periférico
