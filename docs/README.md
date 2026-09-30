@@ -23,6 +23,7 @@ que avanzas por el roadmap.
 | [`01-hardware/cardputer-map.md`](01-hardware/cardputer-map.md) | Pinout completo, periféricos, energía | Al empezar cualquier hito |
 | [`01-hardware/pin-conflicts.md`](01-hardware/pin-conflicts.md) | Pines compartidos y sus conflictos | Antes de usar SD, mic o IR |
 | [`01-hardware/buses.md`](01-hardware/buses.md) | Qué cuelga de SPI / I2C / I2S | Al tocar cualquier periférico |
+| [`01-hardware/spi-pads-controladores.md`](01-hardware/spi-pads-controladores.md) | Pad, bus y controlador: las tres capas entre el silicio y el chip externo | **Antes del hito 2** |
 | [`02-abstraction-ladder.md`](02-abstraction-ladder.md) | Los 4 niveles Arduino→registros | Para decidir cómo abordar cada tarea |
 | [`03-libraries/m5unified.md`](03-libraries/m5unified.md) | API de M5Unified/M5Cardputer y qué abstrae | Nivel 1 |
 | [`03-libraries/fuentes-locales.md`](03-libraries/fuentes-locales.md) | Dónde viven en disco las librerías y el framework, y cómo leerlas | Cuando necesites una firma o una declaración |

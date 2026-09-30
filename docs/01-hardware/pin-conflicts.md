@@ -7,17 +7,17 @@ el hito en curso.
 
 Los números de pin son los de [`cardputer-map.md`](cardputer-map.md).
 
-## Los tres conflictos conocidos
+Aquí solo cuentan los **pads compartidos en el cobre** de la placa. Compartir un
+bus o un controlador SPI es otra cosa, con otras consecuencias: ver
+[`spi-pads-controladores.md`](spi-pads-controladores.md).
 
-### `GPIO12` — Display CS ↔ SD MOSI
+## Los dos conflictos conocidos
 
-El chip select del display y el MOSI de la MicroSD comparten pin. En la práctica,
-si vas a usar display y SD a la vez, tienes que ser consciente de que una
-operación mal secuenciada puede dejar al display "escuchando" datos destinados a
-la SD. Con M5Unified esto está resuelto por la librería; **cuando bajes a manejar
-los buses tú mismo (nivel 2+), la gestión del CS es responsabilidad tuya**.
-
-Relevante en: **hito 2 (logger a MicroSD)**, porque ahí conviven display y SD.
+> **Retirado: "`GPIO12` — Display CS ↔ SD MOSI".** Nunca existió. Salía de una
+> tabla de pines equivocada. El display usa CS=37 y la SD usa CS=12 y MOSI=14; no
+> comparten ningún pad. Fuentes en [`cardputer-map.md`](cardputer-map.md). Lo que
+> sí comparten es el **presupuesto de controladores**: GP-SPI3 lo ocupa el display
+> y GP-SPI2 lo ocupará la SD, y el S3 no tiene más para uso general.
 
 ### `GPIO43` — Mic DATA ↔ Speaker LRCK
 
@@ -53,6 +53,5 @@ multiplexar en el tiempo.
 
 | GPIO | Periférico A | Periférico B | Regla |
 |------|--------------|--------------|-------|
-| 12 | Display CS | SD MOSI | Gestionar CS con cuidado al usar ambos |
 | 43 | Mic DATA | Speaker LRCK | No capturar y reproducir a la vez |
 | 46 | IR RX | Mic CLK | No usar micro e IR RX simultáneamente |

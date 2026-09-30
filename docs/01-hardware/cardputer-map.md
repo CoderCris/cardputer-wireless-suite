@@ -31,29 +31,44 @@ necesite un número de pin **enlaza aquí**, no lo copia.
 
 ### SPI — Display ST7789V2 (240×135)
 
+Controlador: **GP-SPI3** (`SPI3_HOST`), elegido por M5GFX. Fuente:
+`.pio/libdeps/cardputer/M5GFX/src/M5GFX.cpp`, rama de autodetección del
+Cardputer (`bus_cfg.pin_* = ...`, `cfg.pin_cs = GPIO_NUM_37`).
+
 | Señal | GPIO | Rol |
 |-------|------|-----|
-| CS    | 12   | Chip select (seleccionar el display en el bus) |
-| DC    | 34   | Data/Command (distingue byte de comando vs. de datos) |
+| CS    | 37   | Chip select (seleccionar el display en el bus) |
+| DC    | 34   | Data/Command. No es una señal SPI: es un GPIO normal que M5GFX mueve a mano |
 | RST   | 33   | Reset del controlador |
 | BL    | 38   | Backlight (retroiluminación) |
 | SCLK  | 36   | Reloj SPI |
-| MOSI  | 35   | Master Out Slave In (datos hacia el display) |
+| SDA   | 35   | Datos **bidireccionales** (SPI de 3 hilos) |
 
-El display no tiene MISO cableado: es un periférico de solo escritura desde el
-punto de vista habitual (write-only display).
+No hay MISO (`pin_miso = -1`), pero eso no hace al display de solo escritura:
+M5GFX lo configura con `spi_3wire = true` y `readable = true`. En SPI de 3 hilos,
+la misma línea de datos cambia de dirección para leer (half-duplex). Que la
+lectura de la GRAM funcione de verdad en esta unidad está **pendiente de
+observar**.
 
 ### SPI — MicroSD
 
+Controlador: **GP-SPI2** (FSPI) si se usa el objeto `SPI` de Arduino, que en el S3
+es `FSPI` = índice 0 = `DR_REG_SPI2_BASE` (`cores/esp32/esp32-hal-spi.h` y
+`esp32-hal-spi.c`, en `~/.platformio/packages/framework-arduinoespressif32/`).
+Pines tomados del ejemplo oficial
+`.pio/libdeps/cardputer/M5Cardputer/examples/Basic/sdcard/sdcard.ino`.
+
 | Señal | GPIO | Rol |
 |-------|------|-----|
-| CS    | 14   | Chip select de la tarjeta |
+| CS    | 12   | Chip select de la tarjeta |
 | SCLK  | 40   | Reloj SPI |
 | MISO  | 39   | Master In Slave Out (datos desde la SD) |
-| MOSI  | 12   | Master Out Slave In (datos hacia la SD) |
+| MOSI  | 14   | Master Out Slave In (datos hacia la SD) |
 
-⚠️ **`GPIO12` se comparte con el CS del display.** Ver
-[`pin-conflicts.md`](pin-conflicts.md).
+Display y SD **no comparten ningún pin**. Una versión anterior de esta tabla
+tenía intercambiados el CS y el MOSI de la SD, y además el CS del display mal
+puesto, lo que creaba un "conflicto `GPIO12`" que no existe. Pad, bus y
+controlador se explican en [`spi-pads-controladores.md`](spi-pads-controladores.md).
 
 ### I2C — Grove y gestión de energía
 

@@ -13,9 +13,11 @@ píxeles.
 
 ## Señales relevantes
 
-- **SCLK, MOSI**: reloj y datos SPI (write-only; no leemos del display).
-- **CS** (`GPIO12`): selecciona el display. Compartido con SD MOSI — ver
-  [`../01-hardware/pin-conflicts.md`](../01-hardware/pin-conflicts.md).
+- **SCLK, SDA**: reloj y datos. El bus es **SPI de 3 hilos**: no hay MISO, y la
+  única línea de datos cambia de dirección cuando se lee del panel. M5GFX lo
+  declara con `spi_3wire = true` y `readable = true` (leído del código; que la
+  lectura funcione está pendiente de observar).
+- **CS** (`GPIO37`): selecciona el display. No lo comparte con nadie.
 - **DC** (`GPIO34`): Data/Command. **Nivel bajo = byte de comando; nivel alto =
   byte de datos.** Esta línea es lo que distingue "te estoy configurando" de "te
   estoy mandando píxeles". Es el concepto central del protocolo del ST7789.
@@ -50,7 +52,9 @@ setCursor/println`. Ver qué abstrae cada una en
 ## Pendiente de documentar (según avances)
 
 - [ ] Lista concreta de comandos de init del ST7789V2 (contrastar con datasheet).
-- [ ] Timing SPI: frecuencia de reloj usada por M5GFX y máximos del panel.
+- [ ] Timing SPI: M5GFX usa `freq_write = 40000000` y `freq_read = 16000000` en
+      `SPI3_HOST` (leído de `M5GFX.cpp`). Falta contrastar con los máximos del
+      datasheet del panel.
 - [ ] Nivel 2: init del bus con `spi_bus_initialize` + `spi_device_interface_config_t`.
 - [ ] Nivel 4: bit-banging del envío de un comando y un byte de datos.
 
