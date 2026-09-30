@@ -240,9 +240,10 @@ static void confirmar()
     // pantalla y se empieza otra vez arriba.
     //
     // La alternativa real sería desplazar el contenido hacia arriba una fila,
-    // pero eso exige o bien leer de vuelta la GRAM del ST7789 (el Cardputer no
-    // cablea MISO, así que no se puede) o mantener en RAM el historial de
-    // líneas y repintarlo entero. Lo segundo es lo correcto y llega en el hito
+    // pero eso exige o bien leer de vuelta la GRAM del ST7789 (sin MISO: solo
+    // por SPI de 3 hilos, a 16 MHz, y sin comprobar en hardware) o mantener en
+    // RAM el historial de líneas y repintarlo entero. Lo segundo es lo correcto
+    // porque la fuente de verdad es el buffer, no la pantalla. Llega en el hito
     // 2, cuando aparezca el store: entonces el historial ya existirá y esto se
     // reescribe. Hasta entonces, limpiar es honesto y cuesta cuatro líneas.
     if (prompt_y + M5.Display.fontHeight() > M5.Display.height()) {

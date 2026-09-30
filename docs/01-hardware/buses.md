@@ -15,10 +15,11 @@ Bus síncrono full-duplex, maestro-esclavo. Líneas: **SCLK** (reloj), **MOSI**
 esclavo. El maestro genera el reloj; cada flanco desplaza un bit. Se selecciona un
 esclavo bajando su CS.
 
-En el Cardputer cuelgan de SPI el **display ST7789V2** y la **MicroSD**, pero
-**en buses SPI físicos distintos** (el S3 tiene varios controladores SPI). El
-display comparte `GPIO12` como CS con el MOSI de la SD — ver
-[`pin-conflicts.md`](pin-conflicts.md).
+En el Cardputer cuelgan de SPI el **display ST7789V2** y la **MicroSD**, en
+**buses físicos distintos**: no comparten ni un pad. Además usan controladores
+distintos: el display está en GP-SPI3 y la SD, con el `SPI` de Arduino, en
+GP-SPI2. La diferencia entre pad, bus y controlador, que es lo que importa al
+bajar de nivel, está en [`spi-pads-controladores.md`](spi-pads-controladores.md).
 
 El ESP32-S3 implementa SPI con periféricos dedicados (GP-SPI2/SPI3). En nivel 2
 usarás el driver `spi_master` de ESP-IDF; en nivel 4 podrías bit-banguear SPI
