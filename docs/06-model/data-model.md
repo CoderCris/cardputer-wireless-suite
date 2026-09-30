@@ -23,9 +23,11 @@ perdido — solo queda su representación.
 
 El grafo en RAM compite con los buffers del stack WiFi en modo promiscuo, que no
 son pequeños. Y hay un dato que **hay que verificar en hardware antes de diseñar**:
-[`01-hardware/cardputer-map.md`](../01-hardware/cardputer-map.md) declara 8 MB de
-PSRAM, pero el StampS3 monta un ESP32-S3FN8 y en muchas unidades de Cardputer
-`ESP.getPsramSize()` devuelve 0. La diferencia cambia el diseño entero:
+el StampS3 monta un ESP32-S3FN8, y tanto el nombre del chip como el uso de los
+pads 33-37 por el display indican que no hay PSRAM (razonamiento en
+[`01-hardware/cardputer-map.md`](../01-hardware/cardputer-map.md)). Lo más
+probable es el escenario sin PSRAM, pero la tabla sigue abierta hasta que
+`ESP.getPsramSize()` lo diga. La diferencia cambia el diseño entero:
 
 | Escenario | Diseño posible |
 |-----------|----------------|
