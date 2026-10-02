@@ -12,6 +12,13 @@ constexpr uint8_t MAX_TECLAS = 4;
 // (240 px de ancho / 12 px por carácter con setTextSize(2) sobre el font 6x8).
 constexpr uint8_t CAPACIDAD = 20;
 
+// TODO(wrap 1): separar dos ideas que hoy son el mismo número:
+//   - cuántos caracteres caben en UNA FILA del display (eso es el 20 de arriba)
+//   - cuántos caracteres admite la LÍNEA LÓGICA (el buffer), que ya no tiene por
+//     qué coincidir.
+// Decide un valor para la segunda y justifícalo en el comentario. Ojo al tipo de
+// linea_n antes de elegir un número grande.
+
 
 // ---------------------------------------------------------------------------
 // ESTADO PERSISTENTE
@@ -52,6 +59,7 @@ static bool insertar(char c);
 static bool borrar();
 static void confirmar();
 static void redibujar_linea();
+static int  filas_linea();   // TODO(wrap 2): ver su definición al final
 
 
 void setup()
@@ -234,6 +242,7 @@ static void confirmar()
 
     // Bajar una fila. fontHeight() devuelve la altura del font con el
     // setTextSize() actual ya aplicado.
+    // TODO(wrap 3): una línea larga ya no ocupa una fila, ocupa filas_linea().
     prompt_y += M5.Display.fontHeight();
 
     // Si la siguiente fila ya no cabe entera en el display, se limpia la
@@ -269,6 +278,14 @@ static void redibujar_linea()
     // píxeles. fillRect manda el color de fondo a toda la franja de la línea,
     // que es la única forma de hacer desaparecer el carácter que el Backspace
     // acaba de quitar del buffer.
+    // TODO(wrap 4): esta franja mide una fila. Piensa qué queda en pantalla si
+    // la línea tenía 21 caracteres (dos filas) y Backspace la deja en 20.
+    // ¿Qué rectángulo tienes que limpiar para que eso no pase NUNCA?
+    //
+    // TODO(wrap 5): antes de dibujar, si la última fila de la línea ya no cabe
+    // en el display, aplica la misma política que confirmar(). Hoy solo se
+    // comprueba al pulsar Enter; con el wrap, la línea crece hacia abajo
+    // MIENTRAS escribes.
     M5.Display.fillRect(0, prompt_y, M5.Display.width(), alto, BLACK);
 
     // Y volver a dibujarla entera desde el buffer. print() sin 'ln': la línea
@@ -282,4 +299,18 @@ static void redibujar_linea()
     // docs/04-protocols/spi-st7789.md. Calcular el rectángulo exacto de un
     // carácter es posible, pero con 20 caracteres a 40 MHz de SPI el ahorro no
     // compensa la complejidad. Optimizar antes de medir es adivinar.
+}
+
+
+// Cuántas filas de pantalla ocupa la línea en curso.
+static int filas_linea()
+{
+    // TODO(wrap 2): calcúlalo a partir de linea_n y de los caracteres que caben
+    // en una fila. Dos casos que tu fórmula tiene que acertar, y que debes
+    // razonar con LGFXBase.cpp:2413-2419 delante (el salto de fila ocurre al
+    // dibujar el carácter que NO cabe, no al llenar la fila):
+    //   - linea_n == 0  -> la línea vacía también ocupa su fila (el prompt).
+    //   - linea_n == 20 -> ¿1 fila o 2?
+    // Pista: división entera de C++ trunca hacia cero.
+    return 1;
 }
