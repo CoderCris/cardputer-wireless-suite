@@ -145,6 +145,74 @@ StampS3 ↔ base, o el propio panel.
 3. [ ] Si sigue en negro: flashear Bruce (firmware conocido). Negro con Bruce →
        hardware confirmado.
 
+**Actualización 2026-10-02: no es la pantalla, es un bucle de arranque.**
+Leyendo el puerto serie sin tocar DTR/RTS (para no provocar resets nosotros), la
+ROM imprime su banner ~40 veces por segundo (158 arranques en 4 s), siempre igual:
+`rst:0x3 (RTC_SW_SYS_RST)`, carga el bootloader de segunda etapa (`entry
+0x403c98d0`) y vuelve a empezar. La app nunca llega a ejecutarse, así que la
+pantalla negra es consecuencia, no causa. El USB no se re-enumera durante el bucle.
+
+Lo comprobado en flash (lectura con `esptool.py read_flash` / `verify_flash`):
+- `0x0`: el bootloader grabado es idéntico byte a byte a
+  `.pio/build/cardputer/bootloader.bin` (cabecera: DIO, 80 MHz, 8 MB).
+- `0x8000`: tabla de particiones = `default_16MB.csv`, válida.
+- `0xe000` (otadata): secuencia 1 → arranca `ota_0`. `ota_1` está vacía (`0xFF`).
+- `0x10000`: `verify_flash` del `firmware.bin` → digest correcto. El hash
+  SHA-256 que lleva la imagen al final también es válido (`esptool image_info`).
+
+**Causa encontrada y corregida (2026-10-02): la tabla de particiones.** La primera
+hipótesis (lecturas corruptas a 80 MHz) quedó **refutada**: con la flash a 40 MHz
+el ritmo del bucle no cambió (158 arranques / 4 s), así que el fallo no dependía de
+leer la app. El `Saved PC` se había mapeado con el ELF equivocado: el bootloader
+grabado es la variante **QIO** (`bootloader_qio_80m.elf`, el board define
+`flash_mode: qio`) con la cabecera parcheada a DIO. Con el ELF correcto,
+`0x403cdb0a` es el bucle final de `bootloader_reset()`.
+
+`call_start_cpu0` llega a `bootloader_reset()` por cuatro caminos: falla
+`bootloader_init()`, falla `bootloader_utility_load_partition_table()`, no hay
+partición seleccionable, o no hay app arrancable. El segundo es el nuestro.
+`esp_partition_table_verify` compara cada partición con
+`g_rom_flashchip.chip_size` (8 MB, sacado de la cabecera del bootloader) y
+devuelve `ESP_ERR_INVALID_SIZE` (`0x104`) si `offset + size` lo excede. Con
+`default_16MB.csv`, `app1` acaba en `0xC90000` > `0x800000` → tabla rechazada →
+reset. No se ve ningún mensaje porque el bootloader de Arduino está compilado con
+`CONFIG_BOOTLOADER_LOG_LEVEL_NONE`.
+
+Lo que se dio por "latente" no lo era: era la causa. Cambios en `platformio.ini`:
+1. `default_16MB.csv` → `default_8MB.csv`. Tras flashear: 1 arranque, sin bucle.
+2. Fuera `-DBOARD_HAS_PSRAM`: el chip **no tiene PSRAM** (eFuse `PSRAM_CAP = None`,
+   `espefuse.py summary`). Con el flag, la app logueaba `PSRAM ID read error`.
+   Tras quitarlo: arranque limpio, 8 s sin reinicios ni errores.
+
+Queda abierto: por qué Bruce también salía en negro. No lo sabemos; una tabla de
+particiones incompatible con 8 MB produciría exactamente el mismo síntoma.
+
+**Comprobado en hardware (2026-10-02, por el usuario):** la pantalla muestra la
+terminal; Backspace borra y Enter salta de línea correctamente. Quedan las
+pruebas de ghosting y rebote.
+
+## Estado al guardar partida (2026-10-02)
+
+**En curso: ajuste de línea (wrap).** M5GFX ya hace el wrap visual por su cuenta
+(`_textwrap_x = true` por defecto, `LGFXBase.hpp:1057`; salto en
+`LGFXBase.cpp:2413-2419`). Lo que lo impide es `CAPACIDAD = 20`. Esqueleto con
+`TODO(wrap 1..5)` en `src/main.cpp`; compila y se comporta igual que antes
+(`filas_linea()` devuelve 1). Pregunta abierta: en `TODO(wrap 4)`, ¿qué
+rectángulo limpiar para que el redibujado sea correcto tras cualquier Backspace,
+sin recordar el estado anterior?
+
+**Propuesta para el hito 2:** partirlo en 2a (SD con la librería `SD` de Arduino,
+manteniendo M5Unified: nivel 1, concepto nuevo = filesystem) y 2b (quitar
+M5Unified, init manual: nivel 2). Pendiente de decidir y reflejar en
+`roadmap.md`. El gate sigue siendo el checklist de dominio de abajo, no el wrap.
+
+**Errores en `docs/` pendientes de corregir:**
+- AXP2101 (ver arriba).
+- `01-hardware/pin-conflicts.md`: `GPIO12` NO es CS del display. Display en
+  SCK 36 / MOSI 35 / CS 37 (`M5GFX.cpp:2161-2169`); SD en SCK 40 / MOSI 14 /
+  MISO 39 / CS 12 (`M5Unified.cpp:186`, `M5Cardputer/examples/Basic/sdcard`).
+  Pregunta abierta: ¿comparten bus SPI? (TRM §30, *SPI Controller*).
+
 **Entorno arreglado de paso.** Usuario añadido a `dialout` (hace falta re-login
 para que el kernel lo cargue en las credenciales del proceso); `pio` enlazado en
 `~/.local/bin`. Pendiente opcional: regla udev mínima para que ModemManager no
