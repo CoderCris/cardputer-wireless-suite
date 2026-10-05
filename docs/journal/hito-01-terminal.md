@@ -206,7 +206,7 @@ manteniendo M5Unified: nivel 1, concepto nuevo = filesystem) y 2b (quitar
 M5Unified, init manual: nivel 2). Pendiente de decidir y reflejar en
 `roadmap.md`. El gate sigue siendo el checklist de dominio de abajo, no el wrap.
 
-**Errores en `docs/` pendientes de corregir:**
+**Errores en `docs/` pendientes de corregir** (los dos, corregidos el 2026-10-05; de paso, también los pines del micrófono, DATA 46 / CLK 43, y el falso IR RX en `GPIO46`):
 - AXP2101 (ver arriba).
 - `01-hardware/pin-conflicts.md`: `GPIO12` NO es CS del display. Display en
   SCK 36 / MOSI 35 / CS 37 (`M5GFX.cpp:2161-2169`); SD en SCK 40 / MOSI 14 /
@@ -218,7 +218,7 @@ para que el kernel lo cargue en las credenciales del proceso); `pio` enlazado en
 `~/.local/bin`. Pendiente opcional: regla udev mínima para que ModemManager no
 toque `303a:1001`.
 
-**Error encontrado en `docs/`.** El Cardputer V1 **no tiene AXP2101**: M5Unified
+**Error encontrado en `docs/`** (corregido el 2026-10-05). El Cardputer V1 **no tiene AXP2101**: M5Unified
 usa `pmic_adc` para `board_M5Cardputer` (batería por ADC en GPIO10, divisor 2:1;
 `Power_Class.cpp:295-301`). Afirman lo contrario `01-hardware/cardputer-map.md`,
 `01-hardware/buses.md`, `03-libraries/m5unified.md`, `glossary.md`,

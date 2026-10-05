@@ -69,28 +69,37 @@ tenía intercambiados el CS y el MOSI de la SD, y además el CS del display mal
 puesto, lo que creaba un "conflicto `GPIO12`" que no existe. Pad, bus y
 controlador se explican en [`spi-pads-controladores.md`](spi-pads-controladores.md).
 
-### I2C — Grove y gestión de energía
+### I2C — solo el Grove
 
 | Señal | GPIO | Nota |
 |-------|------|------|
 | SDA   | 2    | Bus de datos I2C (Grove) |
 | SCL   | 1    | Reloj I2C (Grove) |
 
-El **AXP2101** (PMIC, gestión de energía y carga de la LiPo) cuelga del bus I2C
-interno. Controla rieles de alimentación y la carga de batería.
+El Cardputer V1 **no tiene bus I2C interno**: en la tabla de pines de M5Unified
+(`_pin_table_i2c_ex_in`, `M5Unified.cpp`) sus pines internos SCL/SDA valen `255`
+(no existe) y los externos son 1 y 2. Tampoco hay PMIC: una versión anterior de
+este mapa situaba aquí un AXP2101, y era falso. La batería se mide por ADC (ver
+*Radio y alimentación*).
 
 ### I2S — Audio
 
 | Periférico | Señal | GPIO |
 |------------|-------|------|
-| Mic SPM1423 | DATA | 43 |
-| Mic SPM1423 | CLK  | 46 |
+| Mic SPM1423 | DATA | 46 |
+| Mic SPM1423 | CLK  | 43 |
 | Altavoz NS4168 | BCLK | 41 |
 | Altavoz NS4168 | LRCK | 43 |
 | Altavoz NS4168 | DIN  | 42 |
 
-⚠️ `GPIO43` (mic DATA / speaker LRCK) y `GPIO46` (mic CLK / IR RX) están
-compartidos. Ver [`pin-conflicts.md`](pin-conflicts.md).
+Fuente: configuración de `board_M5Cardputer` en `M5Unified.cpp` (micrófono:
+`pin_data_in = GPIO_NUM_46`, `pin_ws = GPIO_NUM_43`; altavoz: `pin_bck = 41`,
+`pin_ws = 43`, `pin_data_out = 42`, en `I2S_NUM_1`). El micrófono es **PDM**: en
+ese modo el periférico I2S saca el reloj por el pin WS, por eso `pin_ws` es su
+CLK. Una versión anterior de esta tabla tenía DATA y CLK intercambiados.
+
+⚠️ `GPIO43` (mic CLK / speaker LRCK) es un pad compartido. Ver
+[`pin-conflicts.md`](pin-conflicts.md).
 
 ### GPIO directo
 
@@ -98,9 +107,9 @@ compartidos. Ver [`pin-conflicts.md`](pin-conflicts.md).
 |---------|------|------|
 | Teclado — selección | 8, 9, 11 | Salidas. Número binario de 3 bits → decodificador 3→8 |
 | Teclado — lectura | 13, 15, 3, 4, 5, 6, 7 | Entradas con pull-up interno. Reposo 1, pulsada 0 |
-| IR TX | 44 | Emisor infrarrojo |
-| IR RX | 46 | Receptor infrarrojo (compartido con mic CLK) |
-| LED de estado | 21 | LED direccionable/simple |
+| IR TX | 44 | Emisor infrarrojo (ejemplo `M5Cardputer/examples/Basic/ir_nec/ir_nec.ino`) |
+| Botón BtnA (BOOT) | 0 | `M5Unified.cpp` lo lee como botón |
+| LED de estado | 21 | Tabla de LED de M5Unified |
 
 El teclado no es un pin único: es una **matriz** de 8 selecciones × 7 lecturas
 (56 teclas) gobernada por 10 GPIO. Los tres pines de selección no son tres líneas:
@@ -108,17 +117,20 @@ llevan un número de 0 a 7 a un decodificador 3→8 que baja una sola salida. Pi
 extraídos de `IOMatrix.h` del driver, **no del esquemático**. Mecanismo completo en
 [`../04-protocols/gpio-keyboard.md`](../04-protocols/gpio-keyboard.md).
 
-> **IR RX pendiente de verificar.** Las especificaciones públicas del Cardputer V1
-> mencionan solo un **emisor** IR (`GPIO44`) y sitúan `GPIO46` en el micrófono.
-> Contrasta la fila *IR RX* con el esquemático oficial antes del hito 4. Si no hay
-> receptor, uno externo (p. ej. un VS1838B) por el puerto Grove cubre el hueco.
+> **No hay receptor IR.** Una versión anterior de esta tabla ponía *IR RX* en
+> `GPIO46`, pero ese pad es el DATA del micrófono en M5Unified, y en el código de
+> M5Cardputer solo aparece el emisor (`GPIO44`). Leído del código; falta
+> contrastarlo con el esquemático oficial. Para **capturar** IR (hito 4) hace falta
+> un receptor externo por el puerto Grove.
 
 ### Radio y alimentación
 
 - **WiFi + Bluetooth 5 (LE)**: integrados en el ESP32-S3, sin pines externos
   (antena en el módulo).
 - **USB-C**: USB nativo CDC/JTAG del S3 (programación + Serial).
-- **Batería**: LiPo, carga gestionada por el AXP2101 vía I2C.
+- **Batería**: LiPo. Sin PMIC: M5Unified configura `pmic_adc` para
+  `board_M5Cardputer` y lee la tensión por **ADC1 en `GPIO10`** con un divisor 2:1
+  (`_adc_ratio = 2.0f`, `utility/Power_Class.cpp`).
 
 ## Regla de oro
 

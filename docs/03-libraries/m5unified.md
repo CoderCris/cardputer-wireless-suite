@@ -37,11 +37,12 @@ matricial**.
 Inicializa los periféricos que M5Unified conoce de la placa detectada. Por debajo,
 entre otras cosas:
 - Configura el **bus SPI** y arranca el driver del **display ST7789V2**.
-- Inicializa el **AXP2101** por I2C (rieles de energía, carga de batería).
+- Configura la medida de batería: en el Cardputer V1 no hay PMIC, así que
+  `Power` lee la tensión por ADC en `GPIO10` (`utility/Power_Class.cpp`).
 - Prepara botones, altavoz y micrófono.
 
 Es el `begin` "mágico" que en nivel 2 desmontarás en llamadas explícitas
-(`spi_bus_initialize`, init del ST7789, driver I2C del AXP2101...). Si no
+(`spi_bus_initialize`, init del ST7789, lectura del ADC de batería...). Si no
 existiera, tendrías que hacer todo eso a mano antes de poder pintar un píxel.
 
 > **No inicializa el teclado.** El teclado matricial es específico del Cardputer y

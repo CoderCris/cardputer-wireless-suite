@@ -47,7 +47,6 @@ referencia principal para todo lo que sea registros y periféricos.
 
 - **Sitronix ST7789V2** — datasheet del controlador de display (comandos de init,
   timing SPI). Buscar "ST7789V2 datasheet" (Sitronix).
-- **AXP2101** — PMIC, registros de energía y carga. Datasheet de X-Powers.
 - **SPM1423** — micrófono PDM/I2S.
 - **NS4168** — amplificador de audio I2S (altavoz).
 

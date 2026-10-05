@@ -61,11 +61,12 @@ Hito 8 (navegador) ── navega el store que 2..7 han ido poblando
   hito de captura de red real. Concepto clave: `promiscuous mode` (ver
   [glosario](glossary.md)).
 - **Hito 4 — IR**: periférico **RMT** del ESP32-S3 para medir/generar pulsos con
-  precisión de hardware. Ojo al conflicto `GPIO46` (IR RX ↔ mic CLK).
+  precisión de hardware. El Cardputer V1 solo tiene **emisor** IR (`GPIO44`): para
+  capturar hace falta un receptor externo por el Grove.
 - **Hito 5 — BLE**: parseo de advertisement packets. Recon pasivo.
 - **Hito 6 — WiFi en ESP-IDF**: no es una herramienta nueva, es **bajar de nivel**
   el hito 3. Ejercicio puro de escalera de abstracción.
-- **Hito 7 — Audio I2S**: experimental. Conflictos `GPIO43` y `GPIO46`.
+- **Hito 7 — Audio I2S**: experimental. Conflicto `GPIO43` (mic CLK ↔ speaker LRCK).
 - **Hito 8 — Navegador**: **no es un menú de herramientas**. La UI lista *nodos*
   del store y ofrece las herramientas cuyo tipo de entrada casa con el nodo
   seleccionado (ver [`06-model/phases.md`](06-model/phases.md)). Incluye la gestión

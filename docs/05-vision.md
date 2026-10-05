@@ -71,7 +71,8 @@ piezas: sin referencia compartida no hay bus, y es el fallo que más se olvida. 
 **el USB-C tiene que quedar accesible** con el Cardputer montado en la carcasa: un
 diseño que obligue a desacoplar para flashear no sobrevive a la segunda semana.
 
-Sobre alimentación: el riel de 5 V del Grove sale de la gestión del AXP2101 y no
+Sobre alimentación: el riel de 5 V del Grove sale de la batería del Cardputer (sin PMIC
+gestionable por software) y no
 está pensado para sostener una pantalla más un MCU más radios. El hub se alimenta
 a sí mismo. En qué dirección fluye la corriente entre las dos piezas es una
 decisión de diseño con consecuencias físicas, no una casualidad del cableado.

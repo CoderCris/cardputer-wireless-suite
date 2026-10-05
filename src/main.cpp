@@ -68,8 +68,8 @@ void setup()
     //
     //  1. Llama a M5.begin(cfg), que inicializa lo que M5Unified conoce de la
     //     placa: configura el bus SPI y arranca el driver del display
-    //     ST7789V2, inicializa el AXP2101 por I2C (rieles de energía y carga
-    //     de batería), y prepara botones, altavoz y micrófono.
+    //     ST7789V2, configura la lectura de batería por ADC (GPIO10; el
+    //     Cardputer V1 no tiene PMIC), y prepara botones, altavoz y micrófono.
     //
     //  2. Llama a Keyboard.begin(), que configura los 10 GPIO del teclado
     //     matricial: 8, 9 y 11 como salidas (seleccionan una de las 8 líneas

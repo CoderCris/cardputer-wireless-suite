@@ -59,7 +59,7 @@ unido a la línea MOSI de la ranura SD, y lo seguirá estando.
 
 | Qué se comparte | Dónde se decide | Consecuencia | En el Cardputer |
 |---|---|---|---|
-| Pad (mismo cobre, dos chips) | PCB | Exclusión mutua: solo uno a la vez | `GPIO46` IR RX ↔ mic CLK, `GPIO43` ([conflictos](pin-conflicts.md)) |
+| Pad (mismo cobre, dos chips) | PCB | Exclusión mutua: solo uno a la vez | `GPIO43` mic CLK ↔ speaker LRCK ([conflictos](pin-conflicts.md)) |
 | Bus (SCLK/MOSI/MISO comunes, un CS por chip) | PCB | Conviven; el CS decide quién escucha | Ninguno |
 | Controlador | Tu código | Reconfigurar el enrutado en cada cambio, sin solapar transacciones | Evitable hoy; no a partir de un tercer dispositivo |
 

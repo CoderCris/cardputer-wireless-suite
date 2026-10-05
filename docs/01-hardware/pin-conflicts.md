@@ -11,7 +11,7 @@ Aquí solo cuentan los **pads compartidos en el cobre** de la placa. Compartir u
 bus o un controlador SPI es otra cosa, con otras consecuencias: ver
 [`spi-pads-controladores.md`](spi-pads-controladores.md).
 
-## Los dos conflictos conocidos
+## El conflicto conocido
 
 > **Retirado: "`GPIO12` — Display CS ↔ SD MOSI".** Nunca existió. Salía de una
 > tabla de pines equivocada. El display usa CS=37 y la SD usa CS=12 y MOSI=14; no
@@ -19,23 +19,21 @@ bus o un controlador SPI es otra cosa, con otras consecuencias: ver
 > sí comparten es el **presupuesto de controladores**: GP-SPI3 lo ocupa el display
 > y GP-SPI2 lo ocupará la SD, y el S3 no tiene más para uso general.
 
-### `GPIO43` — Mic DATA ↔ Speaker LRCK
+### `GPIO43` — Mic CLK ↔ Speaker LRCK
 
-Micrófono y altavoz comparten una línea I2S. No puedes capturar audio y
+Micrófono y altavoz comparten un pad: el reloj PDM del micrófono y el *word
+select* del altavoz. No puedes capturar audio y
 reproducir simultáneamente sobre esa configuración sin multiplexar. Para la
 mayoría de casos (grabar *o* reproducir, no las dos cosas a la vez) no es
 problema, pero condiciona cualquier idea de "escuchar y responder en tiempo real".
 
 Relevante en: **hito 7 (side-channel de audio I2S)**.
 
-### `GPIO46` — IR RX ↔ Mic CLK
-
-El receptor de infrarrojos y el reloj del micrófono comparten pin. **No puedes
-usar micrófono e IR RX simultáneamente.** Si tu herramienta captura IR, el mic
-queda inutilizable mientras tanto, y viceversa.
-
-Relevante en: **hito 4 (decodificador/replay IR)** si en algún momento coincide
-con audio.
+> **Retirado: "`GPIO46` — IR RX ↔ Mic CLK".** Tampoco existía. `GPIO46` es el
+> DATA del micrófono y el Cardputer V1 no tiene receptor IR (ver
+> [`cardputer-map.md`](cardputer-map.md)). El hito 4 no compite con el micrófono
+> por ningún pad del Cardputer; sí compite por el Grove con cualquier otro
+> periférico externo.
 
 ## Cómo razonar sobre esto al programar
 
@@ -53,5 +51,4 @@ multiplexar en el tiempo.
 
 | GPIO | Periférico A | Periférico B | Regla |
 |------|--------------|--------------|-------|
-| 43 | Mic DATA | Speaker LRCK | No capturar y reproducir a la vez |
-| 46 | IR RX | Mic CLK | No usar micro e IR RX simultáneamente |
+| 43 | Mic CLK | Speaker LRCK | No capturar y reproducir a la vez |

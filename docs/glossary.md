@@ -28,8 +28,9 @@ que usa el display ST7789.
 **PSRAM** — RAM externa (8 MB en el StampS3) para buffers grandes que no caben en
 la SRAM interna del SoC.
 
-**PMIC (AXP2101)** — Power Management IC: gestiona rieles de alimentación y la
-carga de la batería LiPo. Se controla por I2C.
+**PMIC** — Power Management IC: chip que gestiona rieles de alimentación y la
+carga de la batería, normalmente controlado por I2C (p. ej. el AXP2101 de otras
+placas M5). El Cardputer V1 **no tiene**: la batería se mide por ADC.
 
 ## Firmware y sistema
 

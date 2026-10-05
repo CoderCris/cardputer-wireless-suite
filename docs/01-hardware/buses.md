@@ -34,8 +34,9 @@ esclavo tiene una **dirección** de 7 bits; el maestro emite la dirección y tod
 los esclavos la escuchan, pero solo responde el que coincide. Mucho más lento que
 SPI, pero solo dos pines para muchos dispositivos.
 
-En el Cardputer, el **AXP2101** (PMIC de energía) está en el bus I2C interno, y el
-conector **Grove** expone SDA `GPIO2` / SCL `GPIO1` para periféricos externos.
+En el Cardputer V1 **no hay bus I2C interno** ni ningún chip interno en I2C: el
+único bus es el del conector **Grove**, SDA `GPIO2` / SCL `GPIO1`, para
+periféricos externos.
 
 Referencia TRM: capítulo *I2C Controller*.
 
@@ -46,7 +47,8 @@ Bus síncrono pensado para **audio digital**. Líneas típicas: **BCLK** (bit cl
 Transporta muestras de audio en serie, sincronizadas al reloj de bit.
 
 En el Cardputer cuelgan de I2S el **micrófono SPM1423** (PDM/I2S de entrada) y el
-**altavoz NS4168** (I2S de salida). Comparten `GPIO43` — ver
+**altavoz NS4168** (I2S de salida). Comparten el pad `GPIO43` (reloj del micro y
+*word select* del altavoz) — ver
 [`pin-conflicts.md`](pin-conflicts.md). Para blue team, el interés de I2S es el
 análisis de señal y los side-channels (hito 7).
 

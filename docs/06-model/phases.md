@@ -24,7 +24,7 @@ Forzar las siete cajas originales sería cargo cult. Se adaptan a cinco.
 
 | Fase | Qué hace | Hitos que la pueblan | Qué produce |
 |------|----------|----------------------|-------------|
-| **Sense** | Captura pasiva bruta, sin interpretar | 3 (WiFi), 4 (IR RX), 5 (BLE), 7 (I2S) | Observaciones crudas |
+| **Sense** | Captura pasiva bruta, sin interpretar | 3 (WiFi), 4 (IR, receptor externo), 5 (BLE), 7 (I2S) | Observaciones crudas |
 | **Identify** | Correlación: de capturas a entidades con identidad estable | plataforma | Nodos del grafo |
 | **Assess** | Marcar propiedades explotables sobre una entidad | plataforma | Atributos/etiquetas |
 | **Interact** | Emisión activa: replay, inyección, advertising | 4 (IR TX), y radio futura | Observaciones nuevas |
