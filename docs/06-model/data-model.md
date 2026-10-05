@@ -22,10 +22,11 @@ perdido — solo queda su representación.
 ## La restricción dura: RAM
 
 El grafo en RAM compite con los buffers del stack WiFi en modo promiscuo, que no
-son pequeños. Y hay un dato que **hay que verificar en hardware antes de diseñar**:
-[`01-hardware/cardputer-map.md`](../01-hardware/cardputer-map.md) declara 8 MB de
-PSRAM, pero el StampS3 monta un ESP32-S3FN8 y en muchas unidades de Cardputer
-`ESP.getPsramSize()` devuelve 0. La diferencia cambia el diseño entero:
+son pequeños. Y **no hay PSRAM**: el StampS3 monta un ESP32-S3FN8 y el eFuse
+`PSRAM_CAP = None` lo confirma (ver
+[`01-hardware/cardputer-map.md`](../01-hardware/cardputer-map.md)). El diseño
+parte, por tanto, del segundo escenario de esta tabla, que se conserva para
+mostrar por qué la diferencia cambia el diseño entero:
 
 | Escenario | Diseño posible |
 |-----------|----------------|
@@ -36,9 +37,9 @@ El segundo escenario es además el mejor pedagógicamente: obliga a razonar sobr
 fragmentación y sobre presupuesto de memoria, y se parece más a cómo funciona la
 forensia real.
 
-**Micro-tarea previa a cualquier decisión**: imprimir `ESP.getPsramSize()` y
-`ESP.getFreeHeap()` al arrancar, y anotar el resultado en el mapa de hardware. Si
-el hardware contradice la tabla, gana el hardware.
+**Micro-tarea previa a cualquier decisión**: imprimir `ESP.getFreeHeap()` al
+arrancar y anotarlo en el mapa de hardware: es el presupuesto real del que parte
+el store.
 
 ## Persistencia: log append-only
 

@@ -47,9 +47,13 @@ Hito 8 (navegador) ── navega el store que 2..7 han ido poblando
 - **Hito 1 — Terminal**: base de todo. Entrada por teclado, eco a display. Es el
   "hola mundo" del ciclo editar→compilar→flashear→observar. Diario:
   [`journal/hito-01-terminal.md`](journal/hito-01-terminal.md).
-- **Hito 2 — Logger SD**: primer contacto con quitar M5Unified. Aquí aparece el
-  conflicto `GPIO12` (display CS ↔ SD MOSI), ver
-  [`01-hardware/pin-conflicts.md`](01-hardware/pin-conflicts.md). **Desde aquí
+- **Hito 2 — Logger SD**: primer contacto con quitar M5Unified. Display y SD no
+  comparten pines, pero agotan entre los dos los controladores SPI de uso general
+  del S3 (GP-SPI3 el display, GP-SPI2 la SD). La lección es elegir y configurar un
+  controlador sabiendo que ya no queda otro libre, ver
+  [`01-hardware/spi-pads-controladores.md`](01-hardware/spi-pads-controladores.md).
+  (Una versión anterior hablaba de un conflicto `GPIO12` que resultó no existir.)
+  **Desde aquí
   entra en vigor el contrato de salida**: las herramientas emiten registros
   tipados al store, no imprimen a pantalla como salida primaria
   ([`06-model/data-model.md`](06-model/data-model.md)).

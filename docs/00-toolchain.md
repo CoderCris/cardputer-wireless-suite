@@ -20,8 +20,13 @@ Config declarativa y versionable del entorno. `board` selecciona el StampS3
 ```ini
 -DARDUINO_USB_MODE=1         ; Usa el USB nativo del S3, no un UART externo
 -DARDUINO_USB_CDC_ON_BOOT=1  ; Habilita CDC (Communications Device Class) al arrancar
--DBOARD_HAS_PSRAM            ; El StampS3 tiene 8 MB de PSRAM (buffers grandes)
 ```
+
+Sin `-DBOARD_HAS_PSRAM`. Ese flag **no crea PSRAM**: solo hace que el core de
+Arduino intente inicializarla al arrancar. El ESP32-S3FN8 del StampS3 no la tiene
+(eFuse `PSRAM_CAP = None`, ver
+[`01-hardware/cardputer-map.md`](01-hardware/cardputer-map.md)); con el flag, el
+arranque solo producía `PSRAM ID read error`, así que se quitó.
 
 El Cardputer **no tiene chip UART externo**: el puerto serie es el USB nativo del
 ESP32-S3 en modo CDC. Sin estos flags, `Serial.print()` no saldría por el USB-C.
@@ -30,9 +35,15 @@ el que crea/destruye el dispositivo USB.
 
 ### Particiones y monitor
 ```ini
-board_build.partitions = default_16MB.csv  ; espacio para OTA + SPIFFS/LittleFS
+board_build.partitions = default_8MB.csv   ; espacio para OTA + SPIFFS/LittleFS
 monitor_speed = 115200                      ; baudios del monitor serie
 ```
+
+La tabla de particiones tiene que caber en la flash **física**, que en el StampS3
+es de 8 MB (`"maximum_size": 8388608` en `boards/m5stack-stamps3.json`). Una
+versión anterior usaba `default_16MB.csv`. Compilaba igual, porque el build no
+comprueba que las particiones quepan en el chip real; es un error que solo aparece
+al escribir o leer por encima de los 8 MB.
 
 ## Ciclo de trabajo
 
