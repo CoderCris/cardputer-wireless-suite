@@ -466,7 +466,10 @@ dorado = 22 × 10 = 220 Ω ±5 %. En caso de duda, el multímetro manda.
 ## Herramientas que faltan en la lista
 
 Para cerrar los "pendiente de comprobar" de este documento hace falta un
-**multímetro** (continuidad y modo diodo): ¿lo tienes? También conviene confirmar
+**multímetro** con continuidad y modo diodo. Hay uno disponible; modelo y modos
+pendientes de confirmar. Si le falta alguno de los dos modos, la continuidad se
+sustituye con el rango Ω (≈0 Ω = unido) y el modo diodo con 3,3 V + 1 kΩ en serie
+mirando si el segmento se enciende. También conviene confirmar
 que el kit trae **cables Dupont** (macho-macho y macho-hembra). El kit no incluye
 **transistores ni diodos sueltos**, lo que limita conmutar cargas desde un GPIO
 fuera de lo que cubre el ULN2003.
