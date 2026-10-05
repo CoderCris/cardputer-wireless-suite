@@ -85,6 +85,11 @@ llevan un número de 0 a 7 a un decodificador 3→8 que baja una sola salida. Pi
 extraídos de `IOMatrix.h` del driver, **no del esquemático**. Mecanismo completo en
 [`../04-protocols/gpio-keyboard.md`](../04-protocols/gpio-keyboard.md).
 
+> **IR RX pendiente de verificar.** Las especificaciones públicas del Cardputer V1
+> mencionan solo un **emisor** IR (`GPIO44`) y sitúan `GPIO46` en el micrófono.
+> Contrasta la fila *IR RX* con el esquemático oficial antes del hito 4. Si no hay
+> receptor, uno externo (p. ej. un VS1838B) por el puerto Grove cubre el hueco.
+
 ### Radio y alimentación
 
 - **WiFi + Bluetooth 5 (LE)**: integrados en el ESP32-S3, sin pines externos
