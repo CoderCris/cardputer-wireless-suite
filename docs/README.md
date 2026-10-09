@@ -30,6 +30,7 @@ que avanzas por el roadmap.
 | [`04-protocols/`](04-protocols/) | Notas por bus/protocolo (SPI, teclado, WiFi, IR...) | Al bajar de nivel |
 | [`05-vision.md`](05-vision.md) | Objetivo cyberdeck: coprocesadores, enlace, carcasa | Para orientarse a largo plazo |
 | [`06-model/data-model.md`](06-model/data-model.md) | Contrato del store compartido | **Antes del hito 2** |
+| [`04-protocols/wifi-registro-de-captura.md`](04-protocols/wifi-registro-de-captura.md) | Qué lleva un registro de captura WiFi: pcap, `rx_ctrl`, cabecera 802.11 | **Antes de fijar los campos del store** |
 | [`06-model/phases.md`](06-model/phases.md) | Fases Sense→Identify→Assess→Interact→Evidence | Al diseñar navegación |
 | [`07-memory-model.md`](07-memory-model.md) | Pila, `.data`/`.bss`, heap: dónde vive cada variable y qué cuesta | Cuando necesites estado que sobreviva a `loop()` |
 | [`08-arrays-y-cadenas.md`](08-arrays-y-cadenas.md) | Arrays fijos, terminador `'\0'`, `<cstring>`, fuera-por-uno y enteros sin signo | Al manipular cualquier buffer |
