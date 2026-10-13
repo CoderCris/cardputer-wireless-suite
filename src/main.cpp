@@ -8,16 +8,17 @@
 // su carácter. Con 4 no pasa escribiendo normal; es un límite consciente.
 constexpr uint8_t MAX_TECLAS = 4;
 
-// Caracteres útiles de la línea en edición: lo que cabe en una fila del display
-// (240 px de ancho / 12 px por carácter con setTextSize(2) sobre el font 6x8).
-constexpr uint8_t CAPACIDAD = 20;
+// Caracteres que caben en UNA FILA del display: 240 px de ancho / 12 px por
+// carácter (font 6x8 con setTextSize(2)). Es una propiedad de la pantalla.
+constexpr uint8_t COLS_FILA = 20;
 
-// TODO(wrap 1): separar dos ideas que hoy son el mismo número:
-//   - cuántos caracteres caben en UNA FILA del display (eso es el 20 de arriba)
-//   - cuántos caracteres admite la LÍNEA LÓGICA (el buffer), que ya no tiene por
-//     qué coincidir.
-// Decide un valor para la segunda y justifícalo en el comentario. Ojo al tipo de
-// linea_n antes de elegir un número grande.
+// Caracteres que admite la LÍNEA LÓGICA (el buffer). Es una propiedad del
+// editor y ya no coincide con la anterior: una línea larga ocupa varias filas.
+// 80 son 4 filas de las 8 que tiene el display (135 px / 16 px por fila), así
+// que una línea llena siempre cabe entera en una pantalla recién limpiada, que
+// es lo que necesita redibujar_linea() para poder recolocarla arriba. Y queda
+// lejos de 255, el máximo que puede contar linea_n (uint8_t).
+constexpr uint8_t CAPACIDAD = 80;
 
 
 // ---------------------------------------------------------------------------
@@ -59,7 +60,7 @@ static bool insertar(char c);
 static bool borrar();
 static void confirmar();
 static void redibujar_linea();
-static int  filas_linea();   // TODO(wrap 2): ver su definición al final
+static int  filas_linea();
 
 
 void setup()
@@ -220,7 +221,7 @@ static bool borrar()
 {
     // linea_n es uint8_t: si restas con la línea vacía, 0 - 1 no da -1, da 255,
     // y la siguiente escritura del terminador se va a linea[255], fuera del
-    // array. El array tiene 21 bytes; los otros 234 son de otras variables.
+    // array (CAPACIDAD + 1 bytes); lo que hay ahí es de otras variables.
     if (linea_n == 0) {
         return false;
     }
@@ -240,10 +241,11 @@ static void confirmar()
     // teclas), ese último carácter nunca se habría llegado a dibujar.
     redibujar_linea();
 
-    // Bajar una fila. fontHeight() devuelve la altura del font con el
-    // setTextSize() actual ya aplicado.
-    // TODO(wrap 3): una línea larga ya no ocupa una fila, ocupa filas_linea().
-    prompt_y += M5.Display.fontHeight();
+    // Bajar tantas filas como ocupa la línea recién confirmada: con el wrap ya
+    // no es siempre una. fontHeight() devuelve la altura del font con el
+    // setTextSize() actual ya aplicado. Se calcula ANTES de vaciar el buffer,
+    // porque filas_linea() depende de linea_n.
+    prompt_y += filas_linea() * M5.Display.fontHeight();
 
     // Si la siguiente fila ya no cabe entera en el display, se limpia la
     // pantalla y se empieza otra vez arriba.
@@ -275,22 +277,34 @@ static void redibujar_linea()
 {
     const int alto = M5.Display.fontHeight();
 
-    // Borrar es pintar: el ST7789 no sabe qué es un carácter, solo recibe
-    // píxeles. fillRect manda el color de fondo a toda la franja de la línea,
-    // que es la única forma de hacer desaparecer el carácter que el Backspace
-    // acaba de quitar del buffer.
-    // TODO(wrap 4): esta franja mide una fila. Piensa qué queda en pantalla si
-    // la línea tenía 21 caracteres (dos filas) y Backspace la deja en 20.
-    // ¿Qué rectángulo tienes que limpiar para que eso no pase NUNCA?
-    //
-    // TODO(wrap 5): antes de dibujar, si la última fila de la línea ya no cabe
-    // en el display, aplica la misma política que confirmar(). Hoy solo se
-    // comprueba al pulsar Enter; con el wrap, la línea crece hacia abajo
-    // MIENTRAS escribes.
-    M5.Display.fillRect(0, prompt_y, M5.Display.width(), alto, BLACK);
+    // Con el wrap la línea crece hacia abajo MIENTRAS se escribe, no solo al
+    // pulsar Enter. Si su última fila ya no cabe en el display, se aplica la
+    // misma política que en confirmar(): limpiar y recolocar la línea arriba.
+    // Cabe seguro: CAPACIDAD se eligió para que una línea llena no pase de
+    // media pantalla.
+    if (prompt_y + filas_linea() * alto > M5.Display.height()) {
+        M5.Display.fillScreen(BLACK);
+        prompt_y = 0;
+    }
 
-    // Y volver a dibujarla entera desde el buffer. print() sin 'ln': la línea
-    // en curso no salta de fila; eso solo ocurre al confirmar.
+    // Borrar es pintar: el ST7789 no sabe qué es un carácter, solo recibe
+    // píxeles. fillRect manda el color de fondo, que es la única forma de hacer
+    // desaparecer el carácter que el Backspace acaba de quitar del buffer.
+    //
+    // Se limpia desde prompt_y hasta el BORDE INFERIOR del display, no solo las
+    // filas que la línea ocupa ahora. Si la línea tenía 21 caracteres (dos
+    // filas) y un Backspace la deja en 20 (una), limpiar "las filas actuales"
+    // dejaría el carácter 21 huérfano en la fila de abajo. Limpiar hasta abajo
+    // no necesita recordar cuántas filas ocupaba antes, y es correcto porque
+    // por debajo del prompt nunca hay nada que conservar: lo confirmado queda
+    // siempre encima.
+    M5.Display.fillRect(0, prompt_y, M5.Display.width(),
+                        M5.Display.height() - prompt_y, BLACK);
+
+    // Y volver a dibujarla entera desde el buffer. print() sin 'ln': el salto
+    // de fila al confirmar lo lleva prompt_y. Los saltos DENTRO de la línea los
+    // hace M5GFX por su cuenta (_textwrap_x, activo por defecto): al ir a
+    // dibujar un carácter que no cabe, pone el cursor en x = 0 y baja una fila.
     M5.Display.setCursor(0, prompt_y);
     M5.Display.print(linea);
 
@@ -298,20 +312,28 @@ static void redibujar_linea()
     // operación de dibujo se traduce en fijar una ventana en el controlador
     // (comandos CASET/RASET) y volcar el rectángulo de píxeles con RAMWR, ver
     // docs/04-protocols/spi-st7789.md. Calcular el rectángulo exacto de un
-    // carácter es posible, pero con 20 caracteres a 40 MHz de SPI el ahorro no
-    // compensa la complejidad. Optimizar antes de medir es adivinar.
+    // carácter es posible, pero con 80 caracteres como mucho a 40 MHz de SPI el
+    // ahorro no compensa la complejidad. Optimizar antes de medir es adivinar.
 }
 
 
 // Cuántas filas de pantalla ocupa la línea en curso.
 static int filas_linea()
 {
-    // TODO(wrap 2): calcúlalo a partir de linea_n y de los caracteres que caben
-    // en una fila. Dos casos que tu fórmula tiene que acertar, y que debes
-    // razonar con LGFXBase.cpp:2413-2419 delante (el salto de fila ocurre al
-    // dibujar el carácter que NO cabe, no al llenar la fila):
-    //   - linea_n == 0  -> la línea vacía también ocupa su fila (el prompt).
-    //   - linea_n == 20 -> ¿1 fila o 2?
-    // Pista: división entera de C++ trunca hacia cero.
-    return 1;
+    // La línea vacía también ocupa su fila: es donde está el prompt.
+    if (linea_n == 0) {
+        return 1;
+    }
+
+    // M5GFX salta de fila al ir a dibujar el carácter que NO cabe
+    // (LGFXBase.cpp:2413-2419: 'if (_cursor_x + w > rlimit)'), no al llenar la
+    // fila. Con 20 caracteres el último acaba justo en el píxel 240 y no hay
+    // salto: 1 fila. El 21 es el que abre la segunda.
+    //
+    // De ahí el -1 antes de dividir (la división entera trunca):
+    //   linea_n = 20 -> 19 / 20 = 0 -> 1 fila
+    //   linea_n = 21 -> 20 / 20 = 1 -> 2 filas
+    // Sin el -1, 20 / 20 + 1 daría 2 y confirmar() dejaría una fila en blanco
+    // de más cada vez que una línea llenara la fila exacta.
+    return (linea_n - 1) / COLS_FILA + 1;
 }

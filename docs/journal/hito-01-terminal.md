@@ -6,7 +6,8 @@
 **Objetivo**: entrada por teclado → eco a display. Aprender el ciclo
 editar → compilar → flashear → observar. Nivel 1 (Arduino-like).
 
-**Estado**: código completo y compilando; **pendiente de flashear y observar**.
+**Estado**: terminal básica comprobada en hardware (2026-10-02). Ajuste de línea
+implementado y compilando (2026-10-13); **el wrap está sin flashear ni observar**.
 
 ## Qué construyo
 
@@ -114,6 +115,16 @@ Cosas que solo se resuelven flasheando y observando. Anota aquí el resultado.
       fila limpiamente.
 - [ ] **Barrido de la pantalla al llegar abajo.** Confirmar que al agotar las
       filas limpia y reanuda arriba sin dejar restos.
+- [ ] **Wrap, límite de fila.** Escribir exactamente 20 caracteres: deben quedar
+      en una fila, sin salto. El 21 abre la segunda. Enter tras 20 caracteres
+      no debe dejar una fila en blanco de más.
+- [ ] **Wrap, Backspace entre filas.** Con 21 caracteres, un Backspace debe
+      hacer desaparecer el carácter de la segunda fila sin dejar restos.
+- [ ] **Wrap, tope del buffer.** Al llegar a 80 caracteres (4 filas) las teclas
+      siguientes se descartan sin efecto visible.
+- [ ] **Wrap, crecer contra el borde inferior.** Bajar con Enter hasta la última
+      fila y escribir más de 20 caracteres: la pantalla debe limpiarse y la
+      línea en curso reaparecer entera arriba.
 
 ## Incidencia abierta: pantalla negra (2026-09-29)
 
@@ -193,7 +204,8 @@ pruebas de ghosting y rebote.
 
 ## Estado al guardar partida (2026-10-02)
 
-**En curso: ajuste de línea (wrap).** M5GFX ya hace el wrap visual por su cuenta
+**Ajuste de línea (wrap): implementado el 2026-10-13, ver la sección
+siguiente.** Lo que sigue es el estado tal como quedó el 2026-10-02. M5GFX ya hace el wrap visual por su cuenta
 (`_textwrap_x = true` por defecto, `LGFXBase.hpp:1057`; salto en
 `LGFXBase.cpp:2413-2419`). Lo que lo impide es `CAPACIDAD = 20`. Esqueleto con
 `TODO(wrap 1..5)` en `src/main.cpp`; compila y se comporta igual que antes
@@ -224,9 +236,39 @@ usa `pmic_adc` para `board_M5Cardputer` (batería por ADC en GPIO10, divisor 2:1
 `01-hardware/buses.md`, `03-libraries/m5unified.md`, `glossary.md`,
 `05-vision.md` y el comentario de `src/main.cpp:63`. Pendiente de corregir.
 
-**Latente.** `platformio.ini` usa `default_16MB.csv` con flash de 8 MB: `app1`,
+**Latente** (ya no: corregido el 2026-10-02 con `default_8MB.csv`, ver arriba).
+`platformio.ini` usaba `default_16MB.csv` con flash de 8 MB: `app1`,
 `spiffs` y `coredump` quedan fuera del chip. Inofensivo mientras solo se use
 `app0`; hay que arreglarlo antes de OTA o sistema de ficheros.
+
+## Ajuste de línea (2026-10-13)
+
+**Se saltó el contrato de mentoría por segunda vez, a petición mía.** Los cinco
+`TODO(wrap N)` de `src/main.cpp` los implementó el agente: di por aprendido lo
+que me interesaba de este apartado. Verificado solo con `pio run` (compila y
+linka, RAM 6.8%, flash 13.3%); el comportamiento está en la lista de pendientes
+de hardware.
+
+**Dos constantes donde había una.** `COLS_FILA = 20` es de la pantalla;
+`CAPACIDAD = 80` es del editor. 80 son 4 filas de las 8 del display: una línea
+llena siempre cabe en una pantalla recién limpiada, y queda lejos del 255 de
+`linea_n`.
+
+**`filas_linea()` = `(linea_n - 1) / COLS_FILA + 1`, con 1 para la línea
+vacía.** M5GFX salta al ir a dibujar el carácter que no cabe
+(`_cursor_x + w > rlimit`, `LGFXBase.cpp:2413-2419`), no al llenar la fila: 20
+caracteres son una fila, no dos.
+
+**Se limpia desde `prompt_y` hasta el borde inferior**, no solo las filas que la
+línea ocupa ahora. Es la respuesta a la pregunta abierta del `TODO(wrap 4)`: no
+hay que recordar cuántas filas ocupaba antes porque por debajo del prompt nunca
+hay nada que conservar. Coste: hasta ~57 kB por SPI en cada tecla en el peor
+caso (prompt arriba), asumido sin medir.
+
+**La comprobación de "no cabe" pasa también a `redibujar_linea()`.** La línea
+crece hacia abajo mientras se escribe; si su última fila se sale, se limpia la
+pantalla y la línea se recoloca arriba. Se pierde de vista lo confirmado, igual
+que ya pasaba con Enter; el historial sigue siendo cosa del hito 2.
 
 ## Deuda conceptual
 
