@@ -9,7 +9,32 @@ contrato de salida ([`../06-model/data-model.md`](../06-model/data-model.md)).
 
 **Estado**: en 2a. Esqueleto `TODO(sd 1..4)` + `TODO(heap)` en `src/main.cpp`.
 
-## Estado al guardar partida (2026-10-13)
+## Estado al guardar partida (2026-10-14)
+
+**Al retomar, la micro-tarea:** rellenar `TODO(sd 1..4)` y `TODO(heap)` en
+`setup()` de `src/main.cpp`, compilar y flashear (`pio run -t upload`). Anotar
+lo que salga en pantalla: si el montaje dice ok o fallo, el tamaño de la
+tarjeta y el heap libre. Si el montaje falla, mirar el formato de la tarjeta en
+el PC con `lsblk -f` antes de tocar el código.
+
+**Hecho en la sesión del 2026-10-14:** las tres decisiones pendientes de la
+partida anterior quedaron cerradas (ver "Decisiones tomadas"). El modelo de
+datos queda en [`../06-model/data-model.md`](../06-model/data-model.md),
+incluida la lista de lecturas para profundizar. Conceptos nuevos: proyección,
+reloj lógico, NVS y pérdida declarada frente a pérdida silenciosa.
+
+**Pendiente de diseño, sin bloquear la micro-tarea:**
+
+- empates dentro del mismo milisegundo;
+- desbordamiento de `millis()`;
+- versión de esquema o de firmware en cada registro;
+- formato del log (JSONL o TLV);
+- campos finales del evento de resumen.
+
+Siguen pendientes también las pruebas del hito 1 en hardware: wrap, ghosting,
+rebote y barrido.
+
+## Estado al guardar partida (2026-10-13) — histórico, decisiones ya cerradas
 
 **Rama**: `hito-02-logger-sd`, creada desde `hito-01-terminal`.
 
