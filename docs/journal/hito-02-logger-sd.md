@@ -87,8 +87,12 @@ numerados en ficheros con nombre.
 - **Buffer de RAM lleno sin tarjeta.** Propuesta (2026-10-14): resumir las
   observaciones pendientes en un evento de resumen, en lugar de descartarlas en
   silencio. Ajuste: debe ser un *tipo* de registro distinto, inmutable, que diga
-  qué sustituye (número, rango `(boot, t)`) y con qué regla se resumió. Falta
-  definir sus campos.
+  qué sustituye (número, rango `(boot, t)`) y con qué regla se resumió.
+  Campos propuestos: número de eventos resumidos (por tipo, no solo el total),
+  rango `(boot, t)` cubierto, qué conserva y qué descarta, y la regla como
+  identificador + versión (`resumen_v1`), no como texto libre, porque la regla
+  cambiará entre versiones del firmware. Abre otra pregunta: ¿deben llevar
+  todos los registros la versión de esquema o de firmware?
 
 ## Pendiente de comprobar en hardware
 
