@@ -54,9 +54,20 @@ un compromiso entre legibilidad fuera del dispositivo y bytes por registro.
 
 ---
 
-## Decisiones abiertas — son del usuario, no se rellenan aquí
+## Decisiones del usuario
 
 ### 1. ¿El nodo primitivo es la entidad o la observación?
+
+**Decidido (2026-10-14): la observación**, siguiendo event sourcing. El log solo
+contiene eventos inmutables. Las entidades ("este AP", "este dispositivo") son
+*proyecciones*: estado derivado que se reconstruye recorriendo el log, y el índice
+en RAM es una de ellas. Una atribución equivocada, como dos MAC randomizadas que
+resultan ser el mismo dispositivo, se corrige con una proyección nueva, sin tocar
+la evidencia. El coste es que el log crece sin cota y reconstruir el estado al
+arrancar se encarece. El remedio habitual son los snapshots, que se aplazan hasta
+que el coste se pueda medir.
+
+Lo que sigue es la pregunta original, que se conserva como contexto.
 
 ¿Un BSSID visto tres veces en tres canales es **un nodo que se actualiza**, o son
 **tres eventos inmutables** de los que una capa superior deriva la entidad?
@@ -74,7 +85,23 @@ y **correlacionarlos**.
 Detalle incómodo del hardware que condiciona la respuesta: el Cardputer **no tiene
 RTC con batería**. Al arrancar no sabe qué hora es.
 
-Hasta que estas dos estén decididas, el resto del store no se puede especificar.
+**Decidido (2026-10-14): contador de arranques + tiempo desde el arranque.** El
+par `(boot, t)` ordena los eventos de un mismo dispositivo aunque no haya hora de
+pared. Antes de escribir el primer registro hay que resolver tres cosas:
+
+1. **Dónde vive el contador.** Para sobrevivir a un apagado tiene que estar en
+   memoria no volátil (NVS en la flash, o leerse del último registro de la SD).
+   ¿Qué pasa si arrancas sin tarjeta?
+2. **Empates.** ¿Qué ocurre con dos eventos en el mismo milisegundo?
+3. **Desbordamiento.** `millis()` es un `uint32_t` en ms. ¿Cuántos días tarda en
+   dar la vuelta, y lo tolera una sesión de captura larga?
+
+Correlacionar con el mundo exterior (otro dispositivo, un log del SIEM) exige
+hora real, y esto no la da. Con event sourcing no hace falta tenerla al
+capturar: cuando llegue una referencia (NTP, GPS, introducida a mano), basta con
+anexar un evento que diga "el `t` X del boot N corresponde a esta UTC".
+
+Faltan aún los campos restantes y el formato del log (JSONL o TLV).
 
 ---
 
@@ -84,3 +111,32 @@ Cada fase de [`phases.md`](phases.md) produce y consume tipos distintos:
 *Sense* solo escribe, *Identify* lee observaciones y escribe entidades, *Assess*
 anota atributos, *Interact* escribe observaciones nuevas, *Evidence* solo lee.
 El tipo de nodo seleccionado es lo que determina qué herramientas ofrece la UI.
+
+---
+
+## Para profundizar
+
+Lecturas para el modelo de datos, en orden recomendado. Todas en inglés.
+
+1. Jay Kreps, *The Log: What every software engineer should know about real-time
+   data's unifying abstraction* (blog de ingeniería de LinkedIn, 2013). El log
+   append-only como la abstracción central.
+2. Martin Fowler, *Event Sourcing* (martinfowler.com, 2005). Vocabulario básico:
+   evento, proyección, reconstrucción.
+3. Martin Kleppmann, *Designing Data-Intensive Applications* (O'Reilly). Cap. 3
+   (almacenamiento en log, índices, compactación) y cap. 11 (event sourcing y
+   streams).
+4. Martin Kleppmann, *Turning the database inside-out* (charla, Strange Loop
+   2014).
+5. Leslie Lamport, *Time, Clocks, and the Ordering of Events in a Distributed
+   System* (CACM, 1978). El contador de arranques es una versión de su reloj
+   lógico. Las clases de Kleppmann *Distributed Systems* (Cambridge, 2020, en
+   YouTube) lo explican en vídeo, en las sesiones sobre tiempo y relojes lógicos.
+6. Hadley Wickham, *Tidy Data* (Journal of Statistical Software, 2014). Cómo dar
+   forma a las observaciones para que se puedan analizar.
+7. John Lambert, *Defenders think in lists. Attackers think in graphs.* (2015).
+   Por qué el store es un grafo.
+8. Ralph Kimball, *The Data Warehouse Toolkit*, capítulos de tablas de hechos y
+   dimensiones (opcional).
+9. Código del Almirantazgo (NATO, AJP-2.1): fiabilidad de la fuente (A-F) y
+   credibilidad de la información (1-6), para la valoración de la información.

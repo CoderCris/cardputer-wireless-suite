@@ -75,6 +75,10 @@ numerados en ficheros con nombre.
   periférico por paso, para saber a qué atribuir un fallo. Reflejado en
   [`../roadmap.md`](../roadmap.md).
 - **2026-10-14 — Hay MicroSD.** Formato por confirmar en el primer montaje.
+- **2026-10-14 — Modelo de datos: la observación es el nodo primitivo** (event
+  sourcing), y todo registro lleva **contador de arranques + tiempo**. Detalle,
+  subpreguntas pendientes y lecturas en
+  [`../06-model/data-model.md`](../06-model/data-model.md).
 
 ## Qué falló y cómo lo resolví
 
