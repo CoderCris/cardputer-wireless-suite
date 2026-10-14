@@ -1,6 +1,12 @@
 #include <M5Unified.h>
 #include <M5Cardputer.h>   // ya incluye M5Unified.h; el include de arriba es
                            // redundante pero inofensivo (include guards)
+#include <SPI.h>           // objeto global SPI = controlador GP-SPI2
+#include <SD.h>            // comandos SD en modo SPI + FatFs encima
+
+// TODO(sd 1): cuatro constantes con los pines de la SD (SCK, MISO, MOSI, CS).
+// Fuente: docs/01-hardware/spi-pads-controladores.md. Elige el tipo pensando
+// en qué esperan recibir SPI.begin() y SD.begin().
 
 // Máximo de teclas imprimibles simultáneas que recordamos entre vueltas.
 // Si mantienes más de MAX_TECLAS pulsadas a la vez, las que sobran no caben en
@@ -90,6 +96,19 @@ void setup()
     M5.Display.setCursor(0, 0);
     M5.Display.println("Terminal ready");
     M5.Display.println("----------------");
+
+    // TODO(sd 2): arrancar el bus con SPI.begin(sck, miso, mosi, cs).
+    // El display ya ocupa GP-SPI3; este es el último controlador libre.
+    // Ojo al orden de los argumentos: compáralo con la firma en SPI.h.
+
+    // TODO(sd 3): montar con SD.begin(cs, SPI, frecuencia). Devuelve bool.
+    // Empieza con una frecuencia conservadora y justifica el número aquí.
+
+    // TODO(sd 4): pintar "SD ok" o "SD fallo" según ese bool y, si montó, el
+    // tamaño con SD.cardSize() (bytes en uint64_t: ¿en qué unidad lo imprimes
+    // y qué pasa si lo metes en un int?).
+
+    // TODO(heap): pintar ESP.getFreeHeap(). Es el presupuesto real del store.
 
     // La línea en curso empieza justo debajo de la cabecera. getCursorY() ya
     // tiene en cuenta el setTextSize() activo: si mañana cambias la escala,

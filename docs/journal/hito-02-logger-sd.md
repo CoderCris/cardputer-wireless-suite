@@ -7,7 +7,7 @@
 destino de datos que no es el display, y por eso el punto donde entra el
 contrato de salida ([`../06-model/data-model.md`](../06-model/data-model.md)).
 
-**Estado**: recién abierto. Sin código todavía.
+**Estado**: en 2a. Esqueleto `TODO(sd 1..4)` + `TODO(heap)` en `src/main.cpp`.
 
 ## Estado al guardar partida (2026-10-13)
 
@@ -68,6 +68,13 @@ escribir bloques de 512 bytes) y monta FatFs encima, que convierte bloques
 numerados en ficheros con nombre.
 
 ## Decisiones tomadas
+
+- **2026-10-14 — El hito se parte en 2a/2b.** 2a: SD con la librería `SD`,
+  manteniendo M5Unified (nivel 1). 2b: quitar M5Unified (nivel 2), con el gate
+  del checklist de nivel 1 del hito 1. Motivo: un solo cambio de nivel o de
+  periférico por paso, para saber a qué atribuir un fallo. Reflejado en
+  [`../roadmap.md`](../roadmap.md).
+- **2026-10-14 — Hay MicroSD.** Formato por confirmar en el primer montaje.
 
 ## Qué falló y cómo lo resolví
 

@@ -14,7 +14,8 @@ y [`05-vision.md`](05-vision.md).
 | # | Herramienta | Introduce | Nivel | Vínculo blue team |
 |---|-------------|-----------|-------|-------------------|
 | 1 | Terminal interactiva | Display SPI + teclado matricial | 1 | Patrón entrada→proceso→salida |
-| 2 | Logger a MicroSD | Filesystem + init manual de hardware (quitar M5Unified) | 1→2 | Persistencia de datos capturados |
+| 2a | Logger a MicroSD | Filesystem (librería `SD`, con M5Unified) | 1 | Persistencia de datos capturados |
+| 2b | Logger sin M5Unified | Init manual de display y SD | 2 | Saber qué hace el hardware antes de usarlo |
 | 3 | Sniffer WiFi (promiscuous) | `esp_wifi` modo promiscuo, callbacks | 2 | Captura 802.11 |
 | 4 | Decodificador/replay IR | Timing de protocolo, RMT | 2→4 | Captura y replay de señales |
 | 5 | Scanner BLE | Análisis de advertisement packets | 2 | Recon BLE |
@@ -47,7 +48,11 @@ Hito 8 (navegador) ── navega el store que 2..7 han ido poblando
 - **Hito 1 — Terminal**: base de todo. Entrada por teclado, eco a display. Es el
   "hola mundo" del ciclo editar→compilar→flashear→observar. Diario:
   [`journal/hito-01-terminal.md`](journal/hito-01-terminal.md).
-- **Hito 2 — Logger SD**: primer contacto con quitar M5Unified. Display y SD no
+- **Hito 2 — Logger SD**: partido en dos (decidido 2026-10-14) para no cambiar
+  de nivel y de periférico a la vez. **2a** monta la SD con la librería `SD` y
+  mantiene M5Unified: nivel 1, lo nuevo es el filesystem. **2b** quita M5Unified;
+  su gate es el checklist de dominio de nivel 1 del diario del hito 1. Primer
+  contacto con quitar M5Unified en 2b. Display y SD no
   comparten pines, pero agotan entre los dos los controladores SPI de uso general
   del S3 (GP-SPI3 el display, GP-SPI2 la SD). La lección es elegir y configurar un
   controlador sabiendo que ya no queda otro libre, ver
