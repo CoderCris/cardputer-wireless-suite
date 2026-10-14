@@ -84,6 +84,12 @@ numerados en ficheros con nombre.
 
 ## Preguntas abiertas
 
+- **Buffer de RAM lleno sin tarjeta.** Propuesta (2026-10-14): resumir las
+  observaciones pendientes en un evento de resumen, en lugar de descartarlas en
+  silencio. Ajuste: debe ser un *tipo* de registro distinto, inmutable, que diga
+  qué sustituye (número, rango `(boot, t)`) y con qué regla se resumió. Falta
+  definir sus campos.
+
 ## Pendiente de comprobar en hardware
 
 - [ ] Resultado del montaje, tamaño de la tarjeta y heap libre al arrancar.
