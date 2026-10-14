@@ -92,6 +92,12 @@ pared. Antes de escribir el primer registro hay que resolver tres cosas:
 1. **Dónde vive el contador.** Para sobrevivir a un apagado tiene que estar en
    memoria no volátil (NVS en la flash, o leerse del último registro de la SD).
    ¿Qué pasa si arrancas sin tarjeta?
+   **Decidido (2026-10-14):** se lee del log de la SD (último boot + 1), de modo
+   que el contador y el log nunca se contradicen. Sin tarjeta, los eventos se
+   quedan en RAM con boot "pendiente" y se les asigna el número al volcarlos.
+   Nunca se escribe en el log un boot desconocido. Consecuencia: el contador es
+   *por tarjeta*, no por dispositivo. Pendiente: qué hacer si el buffer de RAM
+   se llena antes de que haya tarjeta.
 2. **Empates.** ¿Qué ocurre con dos eventos en el mismo milisegundo?
 3. **Desbordamiento.** `millis()` es un `uint32_t` en ms. ¿Cuántos días tarda en
    dar la vuelta, y lo tolera una sesión de captura larga?
