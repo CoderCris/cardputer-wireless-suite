@@ -8,6 +8,12 @@
 // Fuente: docs/01-hardware/spi-pads-controladores.md. Elige el tipo pensando
 // en qué esperan recibir SPI.begin() y SD.begin().
 
+constexpr uint8_t SD_SCK_PIN = 40;
+constexpr uint8_t SD_MISO_PIN = 39;
+constexpr uint8_t SD_MOSI_PIN = 14;
+constexpr uint8_t SD_CS_PIN = 12;
+
+
 // Máximo de teclas imprimibles simultáneas que recordamos entre vueltas.
 // Si mantienes más de MAX_TECLAS pulsadas a la vez, las que sobran no caben en
 // el historial y se vuelven a detectar como "nuevas" en cada vuelta, repitiendo
@@ -101,12 +107,18 @@ void setup()
     // El display ya ocupa GP-SPI3; este es el último controlador libre.
     // Ojo al orden de los argumentos: compáralo con la firma en SPI.h.
 
+    SPI.begin(SD_SCK_PIN, SD_MISO_PIN, SD_MOSI_PIN, SD_CS_PIN);
+
     // TODO(sd 3): montar con SD.begin(cs, SPI, frecuencia). Devuelve bool.
     // Empieza con una frecuencia conservadora y justifica el número aquí.
+    bool sd_connected = SD.begin(SD_CS_PIN, SPI, 4000000);
+
 
     // TODO(sd 4): pintar "SD ok" o "SD fallo" según ese bool y, si montó, el
     // tamaño con SD.cardSize() (bytes en uint64_t: ¿en qué unidad lo imprimes
     // y qué pasa si lo metes en un int?).
+    if ( !sd_connected){
+        M5.Display.println("WARN :: SD init failed");}
 
     // TODO(heap): pintar ESP.getFreeHeap(). Es el presupuesto real del store.
 
