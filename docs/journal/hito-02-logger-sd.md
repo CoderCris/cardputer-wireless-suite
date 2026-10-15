@@ -7,9 +7,45 @@
 destino de datos que no es el display, y por eso el punto donde entra el
 contrato de salida ([`../06-model/data-model.md`](../06-model/data-model.md)).
 
-**Estado**: en 2a. Esqueleto `TODO(sd 1..4)` + `TODO(heap)` en `src/main.cpp`.
+**Estado**: en 2a. `TODO(sd 1..3)` implementados; `TODO(sd 4)` parcial y `TODO(heap)` pendientes. Compila, sin flashear.
 
-## Estado al guardar partida (2026-10-14)
+## Estado al guardar partida (2026-10-15)
+
+**Al retomar (otro equipo):** `git pull` en la rama `hito-02-logger-sd`, y
+`pio run` para comprobar que compila (compilaba al guardar; sigue sin flashear).
+
+**Hecho en `src/main.cpp`:**
+
+- `TODO(sd 1)`: cuatro `constexpr uint8_t` con SCK 40, MISO 39, MOSI 14, CS 12.
+  Corregidos tras dos errores: tipo `bool` (los cuatro valían 1) y MISO/MOSI
+  intercambiados.
+- `TODO(sd 2)`: `SPI.begin(sck, miso, mosi, cs)`; el orden es SCK, **MISO**,
+  MOSI, SS (`SPI/src/SPI.h:63`).
+- `TODO(sd 3)`: `SD.begin(SD_CS_PIN, SPI, 4000000)`.
+- `TODO(sd 4)`: parcial. Guarda el `bool` y pinta `WARN :: SD init failed` si
+  falla.
+
+**Falta en el código:**
+
+- `TODO(sd 3)`: comentario que justifique los 4 MHz (el TODO lo pedía).
+- `TODO(sd 4)`: rama de éxito ("SD ok") y tamaño con `SD.cardSize()`
+  (`uint64_t`, bytes: decidir la unidad al imprimir y qué pasaría con un `int`).
+- `TODO(heap)`: pintar `ESP.getFreeHeap()`.
+
+**Conceptos de la sesión.** Papel y sentido de cada línea SPI (SCK, MOSI, MISO,
+CS); `SD.begin` es un diálogo con tiempo límite, no un bucle infinito, y su
+`false` no distingue cableado, formato o ausencia de tarjeta; `uint8_t` no
+protege de negativos (`-1` pasa a 255), la protección sería `static_assert`;
+límite de 25 MHz del modo por defecto (recorte en `sd_diskio.cpp:605`) y límite
+práctico por integridad de señal; inicialización a 400 kHz como máximo porque el
+host no conoce aún a la tarjeta (la librería ya lo hace, `sd_diskio.cpp:502`).
+Esto último viene de la especificación SD Physical Layer, no verificado en el
+repo.
+
+**Pregunta abierta para empezar:** si `cardSize()` (`uint64_t`, bytes) de una
+tarjeta de 16 GB se guarda en un `int`, ¿qué valor aparece y por qué?
+
+## Estado al guardar partida (2026-10-14) — histórico
 
 **Al retomar, la micro-tarea:** rellenar `TODO(sd 1..4)` y `TODO(heap)` en
 `setup()` de `src/main.cpp`, compilar y flashear (`pio run -t upload`). Anotar
@@ -120,6 +156,13 @@ numerados en ficheros con nombre.
   todos los registros la versión de esquema o de firmware?
 
 ## Pendiente de comprobar en hardware
+
+- [ ] **Test de frecuencia de la SD** (posterior al primer montaje): código que
+      escriba datos con patrón conocido a varias frecuencias (p. ej. 4, 10, 20 y
+      25 MHz), los lea de vuelta, compare y registre a partir de qué frecuencia
+      aparecen diferencias. Objetivo: fijar la frecuencia de trabajo un escalón
+      por debajo del primer fallo, con medición y no por suposición. Lo ejecuta
+      y lo observa el usuario.
 
 - [ ] Resultado del montaje, tamaño de la tarjeta y heap libre al arrancar.
       Anotar el heap en [`../01-hardware/cardputer-map.md`](../01-hardware/cardputer-map.md).
