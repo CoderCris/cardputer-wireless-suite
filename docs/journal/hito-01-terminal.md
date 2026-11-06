@@ -7,8 +7,8 @@
 editar → compilar → flashear → observar. Nivel 1 (Arduino-like).
 
 **Estado**: terminal básica comprobada en hardware (2026-10-02). Ajuste de línea
-comprobado en hardware (2026-11-06), junto con rebote y escritura rápida. Queda
-el ghosting.
+comprobado en hardware (2026-11-06), junto con rebote y escritura rápida. Ghosting:
+sin fantasmas observados (2026-11-06), causa sin determinar.
 
 ## Qué construyo
 
@@ -100,9 +100,9 @@ comportamiento en el dispositivo.
 
 Cosas que solo se resuelven flasheando y observando. Anota aquí el resultado.
 
-- [ ] **Ghosting.** Observado 2026-11-06: con `t`, `u` y `f` pulsadas a la vez
-      **no aparece `h` fantasma**. Falta el segundo rectángulo (`q`, `e`,
-      `Shift`). No basta para afirmar que hay diodos: si las salidas del
+- [x] **Ghosting.** Observado 2026-11-06: **no aparecen fantasmas** en dos
+      rectángulos (`t`+`u`+`f` sin `h`; `q`+`e`+`Shift` sin `s`/`S`). Queda
+      abierta la causa. No basta para afirmar que hay diodos: si las salidas del
       decodificador son push-pull (las no seleccionadas a nivel alto activo),
       el camino fantasma es un cortocircuito alto-bajo a través de dos teclas
       y la columna queda en un nivel intermedio, no a 0. Se resuelve con el

@@ -162,7 +162,11 @@ teclas. Anota el resultado en
 
 - [x] Pines y mecanismo de selección.
 - [x] Mapa de coordenadas → caracteres, incluyendo modificadores.
-- [ ] **Comprobar el ghosting** con el procedimiento de arriba (flasheando).
+- [x] **Comprobar el ghosting** (2026-11-06): sin fantasmas en `t`+`u`+`f` ni
+      en `q`+`e`+`Shift`. **No prueba que haya diodos**: si las salidas del
+      decodificador son push-pull, el camino fantasma es un cortocircuito
+      alto-bajo y la columna no baja limpia a 0. Lo decide el esquemático
+      (punto siguiente).
 - [ ] Confirmar el chip decodificador contra el esquemático de M5Stack.
 - [ ] Nivel 2: escaneo de la matriz con `gpio_config()` + debounce propio.
 
