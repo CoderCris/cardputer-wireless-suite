@@ -7,7 +7,8 @@
 editar → compilar → flashear → observar. Nivel 1 (Arduino-like).
 
 **Estado**: terminal básica comprobada en hardware (2026-10-02). Ajuste de línea
-implementado y compilando (2026-10-13); **el wrap está sin flashear ni observar**.
+comprobado en hardware (2026-11-06), junto con rebote y escritura rápida. Queda
+el ghosting.
 
 ## Qué construyo
 
@@ -99,30 +100,36 @@ comportamiento en el dispositivo.
 
 Cosas que solo se resuelven flasheando y observando. Anota aquí el resultado.
 
-- [ ] **Ghosting.** ¿Lleva diodos la matriz? Pulsa `t`, `u` y `f` a la vez y mira
+- [ ] **Ghosting.** Observado 2026-11-06: con `t`, `u` y `f` pulsadas a la vez
+      **no aparece `h` fantasma**. Falta el segundo rectángulo (`q`, `e`,
+      `Shift`). No basta para afirmar que hay diodos: si las salidas del
+      decodificador son push-pull (las no seleccionadas a nivel alto activo),
+      el camino fantasma es un cortocircuito alto-bajo a través de dos teclas
+      y la columna queda en un nivel intermedio, no a 0. Se resuelve con el
+      esquemático. Procedimiento original: ¿lleva diodos la matriz? Pulsa `t`, `u` y `f` a la vez y mira
       si aparece una `h` fantasma. Procedimiento completo y por qué ese trío en
       [`../04-protocols/gpio-keyboard.md`](../04-protocols/gpio-keyboard.md).
-- [ ] **Pérdida de teclas al escribir rápido.** ¿Se nota en la práctica el fallo
+- [x] **Pérdida de teclas al escribir rápido.** OK en hardware (2026-11-06). ¿Se nota en la práctica el fallo
       de `isChange()` al solapar dos pulsaciones? (El código actual no usa
       `isChange()`: hace su propio detector de flancos sobre `estado.word`, que
       no tiene ese fallo. Queda por ver si aparece otro.)
-- [ ] **Rebote de contactos.** El driver no tiene antirrebote alguno. ¿Aparecen
+- [x] **Rebote de contactos.** OK en hardware (2026-11-06). El driver no tiene antirrebote alguno. ¿Aparecen
       caracteres dobles al teclear? Si sí, es el primer candidato a resolver en
       el hito 2 con un antirrebote propio.
-- [ ] **Secuencia de prueba**: `hola`, cuatro backspaces seguidos (dos de más a
+- [x] **Secuencia de prueba** OK en hardware (2026-11-06).: `hola`, cuatro backspaces seguidos (dos de más a
       propósito), `test`, Enter, y luego Enter tres veces en vacío. Los
       backspaces de más no deben romper nada y los Enter vacíos deben bajar de
       fila limpiamente.
-- [ ] **Barrido de la pantalla al llegar abajo.** Confirmar que al agotar las
+- [x] **Barrido de la pantalla al llegar abajo.** OK en hardware (2026-11-06). Confirmar que al agotar las
       filas limpia y reanuda arriba sin dejar restos.
-- [ ] **Wrap, límite de fila.** Escribir exactamente 20 caracteres: deben quedar
+- [x] **Wrap, límite de fila.** OK en hardware (2026-11-06). Escribir exactamente 20 caracteres: deben quedar
       en una fila, sin salto. El 21 abre la segunda. Enter tras 20 caracteres
       no debe dejar una fila en blanco de más.
-- [ ] **Wrap, Backspace entre filas.** Con 21 caracteres, un Backspace debe
+- [x] **Wrap, Backspace entre filas.** OK en hardware (2026-11-06). Con 21 caracteres, un Backspace debe
       hacer desaparecer el carácter de la segunda fila sin dejar restos.
-- [ ] **Wrap, tope del buffer.** Al llegar a 80 caracteres (4 filas) las teclas
+- [x] **Wrap, tope del buffer.** OK en hardware (2026-11-06). Al llegar a 80 caracteres (4 filas) las teclas
       siguientes se descartan sin efecto visible.
-- [ ] **Wrap, crecer contra el borde inferior.** Bajar con Enter hasta la última
+- [x] **Wrap, crecer contra el borde inferior.** OK en hardware (2026-11-06). Bajar con Enter hasta la última
       fila y escribir más de 20 caracteres: la pantalla debe limpiarse y la
       línea en curso reaparecer entera arriba.
 
