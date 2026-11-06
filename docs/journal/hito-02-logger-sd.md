@@ -7,7 +7,30 @@
 destino de datos que no es el display, y por eso el punto donde entra el
 contrato de salida ([`../06-model/data-model.md`](../06-model/data-model.md)).
 
-**Estado**: en 2a. `TODO(sd 1..3)` implementados; `TODO(sd 4)` parcial y `TODO(heap)` pendientes. Compila, sin flashear.
+**Estado**: en 2a. Montaje de la SD, tamaño en MiB y heap libre completos en
+`src/main.cpp`. Compila, sin flashear. Siguiente: flashear y anotar resultados
+(ver "Pendiente de comprobar en hardware").
+
+## 2026-11-06 — cambio de enfoque y cierre del código de 2a
+
+Desde hoy el código lo escribe el agente y el usuario se centra en el hardware y
+la lógica (nuevo contrato en `CLAUDE.md`). En esta sesión el agente completó
+`sd 4` (rama de éxito con `SD.cardSize()` en MiB) y `heap` (`ESP.getFreeHeap()`).
+
+**Corrección conceptual.** Los 4 MHz no son la frecuencia de las primeras
+órdenes a la tarjeta: la inicialización va a ≤400 kHz por la librería
+(`sd_diskio.cpp:502`). 4 MHz es la frecuencia de trabajo posterior, elegida muy
+por debajo de 25 MHz para que la integridad de señal quede descartada como causa
+si el primer montaje falla.
+
+**Pregunta abierta resuelta.** `cardSize()` de 16·10⁹ bytes en un `int` de 32
+bits conserva solo los 32 bits bajos: 3 115 098 112 sin signo, que con signo se
+lee como −1 179 869 184. Por eso se divide en 64 bits antes de imprimir.
+
+**Heap.** Sin PSRAM, el heap libre al arrancar es el techo del buffer de
+observaciones. Bajará al activar WiFi/BLE; más adelante interesan también el
+mínimo histórico (`getMinFreeHeap`) y el bloque libre más grande
+(fragmentación).
 
 ## Estado al guardar partida (2026-10-15)
 

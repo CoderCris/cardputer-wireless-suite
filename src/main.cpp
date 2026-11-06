@@ -109,18 +109,36 @@ void setup()
 
     SPI.begin(SD_SCK_PIN, SD_MISO_PIN, SD_MOSI_PIN, SD_CS_PIN);
 
-    // TODO(sd 3): montar con SD.begin(cs, SPI, frecuencia). Devuelve bool.
-    // Empieza con una frecuencia conservadora y justifica el número aquí.
+    // Montaje de la SD. Los 4 MHz NO son la frecuencia de la inicialización:
+    // esa la fija la librería a 400 kHz como máximo (sd_diskio.cpp:502),
+    // porque antes del diálogo de arranque el host no sabe qué tarjeta tiene
+    // delante. 4 MHz es la frecuencia de TRABAJO que se aplica después. Se
+    // elige muy por debajo del techo del modo por defecto (25 MHz, recortado
+    // en sd_diskio.cpp:605) para que la integridad de señal (pistas, zócalo,
+    // calidad de la tarjeta) no sea sospechosa en el primer montaje: si falla
+    // a 4 MHz, la causa está en cableado, formato o ausencia de tarjeta, no en
+    // la velocidad. La frecuencia definitiva saldrá del test de frecuencia
+    // pendiente (diario del hito 2).
     bool sd_connected = SD.begin(SD_CS_PIN, SPI, 4000000);
 
+    if (sd_connected) {
+        // cardSize() devuelve bytes en uint64_t: una tarjeta de 16 GB son
+        // ~1.6e10 bytes y un int de 32 bits solo llega a ~2.1e9. Meterlo en
+        // un int conservaría los 32 bits bajos y saldría un número sin
+        // sentido, incluso negativo. Se divide en 64 bits y se imprime en MiB
+        // (1 MiB = 2^20 bytes), que sí cabe holgado.
+        uint64_t sd_mib = SD.cardSize() / (1024ULL * 1024ULL);
+        M5.Display.printf("SD ok: %llu MiB\n", (unsigned long long)sd_mib);
+    } else {
+        // false no distingue causa: sin tarjeta, mal formateada o bus mal.
+        M5.Display.println("WARN :: SD init failed");
+    }
 
-    // TODO(sd 4): pintar "SD ok" o "SD fallo" según ese bool y, si montó, el
-    // tamaño con SD.cardSize() (bytes en uint64_t: ¿en qué unidad lo imprimes
-    // y qué pasa si lo metes en un int?).
-    if ( !sd_connected){
-        M5.Display.println("WARN :: SD init failed");}
-
-    // TODO(heap): pintar ESP.getFreeHeap(). Es el presupuesto real del store.
+    // Heap libre: los bytes de RAM interna que quedan para reservas dinámicas
+    // (malloc/new) tras arrancar display, teclado y el driver de la SD. El
+    // StampS3 no tiene PSRAM, así que este número es todo el presupuesto del
+    // buffer de observaciones antes de volcarlas a la SD.
+    M5.Display.printf("Heap: %u B\n", (unsigned)ESP.getFreeHeap());
 
     // La línea en curso empieza justo debajo de la cabecera. getCursorY() ya
     // tiene en cuenta el setTextSize() activo: si mañana cambias la escala,
