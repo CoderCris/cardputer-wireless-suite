@@ -7,9 +7,10 @@
 destino de datos que no es el display, y por eso el punto donde entra el
 contrato de salida ([`../06-model/data-model.md`](../06-model/data-model.md)).
 
-**Estado**: en 2a. Montaje de la SD, tamaño en MiB y heap libre completos en
-`src/main.cpp`. Compila, sin flashear. Siguiente: flashear y anotar resultados
-(ver "Pendiente de comprobar en hardware").
+**Estado**: **aparcado (2026-11-06)**. El código de 2a está completo (montaje,
+tamaño, heap, informe de arranque). Falta flashear con una tarjeta metida y
+anotar resultados (ver "Pendiente de comprobar en hardware"). Se sigue con el
+hito 3 en la rama `hito-03-sniffer-wifi`.
 
 ## 2026-11-06 — cambio de enfoque y cierre del código de 2a
 
