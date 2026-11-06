@@ -75,6 +75,119 @@ static void redibujar_linea();
 static int  filas_linea();
 
 
+// ---------------------------------------------------------------------------
+// INFORME DE ARRANQUE EN PANTALLA
+//
+// Cómo viaja un log_w() del core hasta el exterior: log_printfv() formatea el
+// texto y llama a ets_printf() (esp32-hal-uart.c:842), una función de la ROM
+// del chip. ets_printf no sabe de USB ni de UART: entrega cada carácter a dos
+// "putc" instalables, putc1 y putc2 (esp_rom/.../esp32s3/rom/ets_sys.h:218).
+// Con ARDUINO_USB_CDC_ON_BOOT, putc2 es el USB nativo (HWCDC.cpp:599) y putc1
+// queda para una UART. Aquí no hay nadie escuchando una UART, así que usamos
+// putc1 para nosotros: cada carácter de log entra también en log_hook().
+//
+// log_hook() NO pinta: puede llamarse desde cualquier sitio, incluso desde una
+// interrupción (isr_log_*), y pintar es una transacción SPI larga contra el
+// display. Solo copia en un buffer en RAM; setup() lo vuelca a pantalla luego.
+// ---------------------------------------------------------------------------
+
+constexpr int LOG_LINEAS = 8;    // líneas de log que se conservan (las últimas)
+constexpr int LOG_ANCHO  = 96;   // caracteres por línea; lo que sobra se corta
+
+static char log_buf[LOG_LINEAS][LOG_ANCHO];
+static int  log_n = 0;           // líneas completas guardadas (como mucho LOG_LINEAS)
+static char log_cur[LOG_ANCHO];  // línea que se está recibiendo
+static int  log_cur_n = 0;
+
+static void log_hook(char c)
+{
+    if (c == '\r') return;                       // los logs acaban en "\r\n"
+    if (c != '\n') {
+        if (log_cur_n < LOG_ANCHO - 1) log_cur[log_cur_n++] = c;
+        return;
+    }
+    // Fin de línea: guardarla. Si el buffer está lleno se descarta la más
+    // antigua desplazando las demás; en arranque es raro y es barato.
+    log_cur[log_cur_n] = '\0';
+    if (log_n == LOG_LINEAS) {
+        memmove(log_buf[0], log_buf[1], sizeof(log_buf[0]) * (LOG_LINEAS - 1));
+        log_n--;
+    }
+    memcpy(log_buf[log_n++], log_cur, log_cur_n + 1);
+    log_cur_n = 0;
+}
+
+static void instalar_espejo_log()
+{
+    ets_install_putc1(log_hook);
+}
+
+// Mensaje propio del arranque: va a pantalla (en color) y al monitor serie.
+static void boot_msg(uint16_t color, const char* fmt, ...)
+{
+    char txt[96];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(txt, sizeof(txt), fmt, args);
+    va_end(args);
+
+    Serial.println(txt);
+    M5.Display.setTextColor(color, BLACK);
+    M5.Display.println(txt);
+}
+
+// Traduce los mensajes conocidos de sd_diskio.cpp a la capa que ha fallado.
+// Devuelve nullptr si el mensaje no tiene pista asociada.
+static const char* pista_sd(const char* msg)
+{
+    // CMD0 sin respuesta: la tarjeta no contesta en absoluto. MISO se lee a 0
+    // porque la placa no tiene pull-up en esa línea y queda flotando
+    // (observado el 2026-11-06 con la ranura vacía).
+    if (strstr(msg, "GO_IDLE_STATE")) return "-> capa electrica: sin tarjeta o sin contacto";
+    // Contesta a CMD0 pero rechaza la secuencia de arranque (CMD8/ACMD41/CMD58).
+    if (strstr(msg, "OP_COND") || strstr(msg, "READ_OCR") || strstr(msg, "SEND_IF_COND"))
+        return "-> protocolo SD: tarjeta rara, vieja o danada";
+    // La tarjeta funciona pero no hay un volumen FAT que FatFs entienda.
+    if (strstr(msg, "No FAT") || strstr(msg, "no valid FAT"))
+        return "-> sistema de archivos: formatear en FAT32";
+    return nullptr;
+}
+
+// Pinta lo capturado por log_hook() en formato corto y vacía el buffer.
+static void volcar_log_arranque()
+{
+    // Una pista por volcado: si fallan varios pasos, la primera capa que
+    // falla es la que explica las demás.
+    const char* pista = nullptr;
+
+    for (int i = 0; i < log_n; i++) {
+        const char* linea_log = log_buf[i];
+
+        // Formato del core: "[  5863][W][sd_diskio.cpp:104] sdWait(): Wait Failed"
+        // (ARDUHAL_LOG_FORMAT en esp32-hal-log.h:91). En pantalla basta con el
+        // nivel y lo que va tras el último "] ": "W sdWait(): Wait Failed".
+        char nivel = '?';
+        const char* p = strstr(linea_log, "][");
+        if (p) nivel = p[2];
+        const char* msg = linea_log;
+        const char* q;
+        while ((q = strstr(msg, "] ")) != nullptr) msg = q + 2;
+
+        uint16_t color = (nivel == 'E') ? RED : (nivel == 'W') ? YELLOW : WHITE;
+        M5.Display.setTextColor(color, BLACK);
+        M5.Display.printf("%c %s\n", nivel, msg);
+
+        if (!pista) pista = pista_sd(msg);
+    }
+
+    if (pista) {
+        M5.Display.setTextColor(CYAN, BLACK);
+        M5.Display.println(pista);
+    }
+    log_n = 0;
+}
+
+
 void setup()
 {
     // M5Cardputer.begin() hace DOS cosas, y por eso no vale M5.begin():
@@ -96,17 +209,23 @@ void setup()
     auto cfg = M5.config();
     M5Cardputer.begin(cfg);
 
-    M5.Display.setTextSize(2);             // Escala del font (multiplicador entero)
-    M5.Display.setTextColor(GREEN, BLACK); // Color texto, color fondo
-    M5.Display.fillScreen(BLACK);          // Limpia el display completo
+    // El arranque se pinta a escala 1 (40 columnas x 16 filas): los mensajes
+    // de diagnóstico son largos y a escala 2 solo caben 20 caracteres por fila.
+    // El terminal vuelve a escala 2 al final de setup().
+    M5.Display.setTextSize(1);
+    M5.Display.fillScreen(BLACK);
     M5.Display.setCursor(0, 0);
-    M5.Display.println("Terminal ready");
-    M5.Display.println("----------------");
 
-    // TODO(sd 2): arrancar el bus con SPI.begin(sck, miso, mosi, cs).
-    // El display ya ocupa GP-SPI3; este es el último controlador libre.
-    // Ojo al orden de los argumentos: compáralo con la firma en SPI.h.
+    // A partir de aquí, todo log_e/log_w del core y de las librerías se copia
+    // también en el buffer de arranque (ver log_hook más abajo).
+    instalar_espejo_log();
 
+    boot_msg(GREEN, "Cardputer boot");
+    boot_msg(WHITE, "SPI2: SCK%u MISO%u MOSI%u CS%u",
+             SD_SCK_PIN, SD_MISO_PIN, SD_MOSI_PIN, SD_CS_PIN);
+
+    // GP-SPI2 (el objeto SPI de Arduino). El display ya ocupa GP-SPI3; este es
+    // el último controlador SPI de propósito general libre.
     SPI.begin(SD_SCK_PIN, SD_MISO_PIN, SD_MOSI_PIN, SD_CS_PIN);
 
     // Montaje de la SD. Los 4 MHz NO son la frecuencia de la inicialización:
@@ -119,7 +238,11 @@ void setup()
     // a 4 MHz, la causa está en cableado, formato o ausencia de tarjeta, no en
     // la velocidad. La frecuencia definitiva saldrá del test de frecuencia
     // pendiente (diario del hito 2).
+    boot_msg(WHITE, "SD.begin @4MHz...");
     bool sd_connected = SD.begin(SD_CS_PIN, SPI, 4000000);
+
+    // Lo que la librería haya dicho durante el montaje, y una pista de causa.
+    volcar_log_arranque();
 
     if (sd_connected) {
         // cardSize() devuelve bytes en uint64_t: una tarjeta de 16 GB son
@@ -128,17 +251,35 @@ void setup()
         // sentido, incluso negativo. Se divide en 64 bits y se imprime en MiB
         // (1 MiB = 2^20 bytes), que sí cabe holgado.
         uint64_t sd_mib = SD.cardSize() / (1024ULL * 1024ULL);
-        M5.Display.printf("SD ok: %llu MiB\n", (unsigned long long)sd_mib);
+
+        // cardType() es lo que la tarjeta declaró en el arranque: SDSC (<=2 GB,
+        // direcciona por bytes) o SDHC/SDXC (direcciona por bloques de 512 B;
+        // la librería las llama a todas SDHC). Lo decide la respuesta a CMD58.
+        const char* tipo = "?";
+        switch (SD.cardType()) {
+            case CARD_MMC:  tipo = "MMC";  break;
+            case CARD_SD:   tipo = "SDSC"; break;
+            case CARD_SDHC: tipo = "SDHC"; break;
+            default:        break;
+        }
+        boot_msg(GREEN, "SD ok: %s, %llu MiB", tipo, (unsigned long long)sd_mib);
     } else {
-        // false no distingue causa: sin tarjeta, mal formateada o bus mal.
-        M5.Display.println("WARN :: SD init failed");
+        boot_msg(RED, "SD FAIL (ver pista arriba)");
     }
 
     // Heap libre: los bytes de RAM interna que quedan para reservas dinámicas
     // (malloc/new) tras arrancar display, teclado y el driver de la SD. El
     // StampS3 no tiene PSRAM, así que este número es todo el presupuesto del
-    // buffer de observaciones antes de volcarlas a la SD.
-    M5.Display.printf("Heap: %u B\n", (unsigned)ESP.getFreeHeap());
+    // buffer de observaciones antes de volcarlas a la SD. El bloque libre más
+    // grande dice si ese heap está troceado: es el tamaño máximo de un único
+    // malloc que saldría bien ahora mismo.
+    boot_msg(WHITE, "Heap: %u B (bloque max %u B)",
+             (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMaxAllocHeap());
+
+    // Una línea en blanco separa el informe de arranque del terminal.
+    M5.Display.println();
+    M5.Display.setTextSize(2);             // Escala del terminal
+    M5.Display.setTextColor(GREEN, BLACK);
 
     // La línea en curso empieza justo debajo de la cabecera. getCursorY() ya
     // tiene en cuenta el setTextSize() activo: si mañana cambias la escala,

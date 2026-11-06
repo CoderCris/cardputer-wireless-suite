@@ -178,6 +178,22 @@ numerados en ficheros con nombre.
   cambiará entre versiones del firmware. Abre otra pregunta: ¿deben llevar
   todos los registros la versión de esquema o de firmware?
 
+## 2026-11-06 — primer flasheo: ranura vacía e informe de arranque
+
+Primer flasheo con `CORE_DEBUG_LEVEL=2`: `Wait Failed`, `GO_IDLE_STATE
+failed` y `f_mount failed: (3) The physical drive cannot work`. La causa era
+que no había tarjeta en la ranura. **Observado:** con la ranura vacía, MISO
+(GPIO 39) se lee `0x00`, no `0xFF`. La placa no lleva pull-up en esa línea y,
+sin nada que la controle, queda flotando hacia 0. Por eso `sdWait()` agota
+su espera (`sd_diskio.cpp:94`, repite mientras lee `0x00`).
+
+Se añadió un informe de arranque en pantalla. Los `log_e`/`log_w` del core
+pasan por `ets_printf` de la ROM, que entrega cada carácter a `putc1` y
+`putc2`. Se instala `putc1` para copiarlos en un buffer en RAM, que `setup()`
+pinta en pantalla con colores y una pista de la capa que falla (eléctrica,
+protocolo SD o sistema de archivos). Compila; el informe no se ha visto aún en
+pantalla.
+
 ## Pendiente de comprobar en hardware
 
 - [ ] **Test de frecuencia de la SD** (posterior al primer montaje): código que
