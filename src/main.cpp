@@ -3,76 +3,21 @@
                            // redundante pero inofensivo (include guards)
 #include <SPI.h>           // objeto global SPI = controlador GP-SPI2
 #include <SD.h>            // comandos SD en modo SPI + FatFs encima
+#include "sniffer.h"       // hito 3: herramienta activa
+#include "terminal.h"      // hito 1: no se llama en este hito
 
-// TODO(sd 1): cuatro constantes con los pines de la SD (SCK, MISO, MOSI, CS).
-// Fuente: docs/01-hardware/spi-pads-controladores.md. Elige el tipo pensando
-// en qué esperan recibir SPI.begin() y SD.begin().
+// Pines de la SD. Fuente: docs/01-hardware/spi-pads-controladores.md.
 
 constexpr uint8_t SD_SCK_PIN = 40;
 constexpr uint8_t SD_MISO_PIN = 39;
 constexpr uint8_t SD_MOSI_PIN = 14;
 constexpr uint8_t SD_CS_PIN = 12;
 
-
-// Máximo de teclas imprimibles simultáneas que recordamos entre vueltas.
-// Si mantienes más de MAX_TECLAS pulsadas a la vez, las que sobran no caben en
-// el historial y se vuelven a detectar como "nuevas" en cada vuelta, repitiendo
-// su carácter. Con 4 no pasa escribiendo normal; es un límite consciente.
-constexpr uint8_t MAX_TECLAS = 4;
-
-// Caracteres que caben en UNA FILA del display: 240 px de ancho / 12 px por
-// carácter (font 6x8 con setTextSize(2)). Es una propiedad de la pantalla.
-constexpr uint8_t COLS_FILA = 20;
-
-// Caracteres que admite la LÍNEA LÓGICA (el buffer). Es una propiedad del
-// editor y ya no coincide con la anterior: una línea larga ocupa varias filas.
-// 80 son 4 filas de las 8 que tiene el display (135 px / 16 px por fila), así
-// que una línea llena siempre cabe entera en una pantalla recién limpiada, que
-// es lo que necesita redibujar_linea() para poder recolocarla arriba. Y queda
-// lejos de 255, el máximo que puede contar linea_n (uint8_t).
-constexpr uint8_t CAPACIDAD = 80;
+// Canal 2,4 GHz que escucha el sniffer (1-13). El 6 es uno de los tres que no
+// se solapan (1, 6, 11) y de los más usados por los routers domésticos.
+constexpr uint8_t CANAL = 6;
 
 
-// ---------------------------------------------------------------------------
-// ESTADO PERSISTENTE
-//
-// Todo esto es 'static' a nivel de archivo: duración estática, vive en .bss
-// (el arranque lo pone a cero antes de llamar a setup()). No puede ser local de
-// loop(), porque loop() se ejecuta miles de veces por segundo y las locales
-// mueren al salir.
-// ---------------------------------------------------------------------------
-
-// Buffer de la línea que se está escribiendo. El +1 es el sitio del '\0':
-// linea_n NO lo cuenta. Si linea_n vale 3, hay 3 caracteres y linea[3] es '\0'.
-// Se mantiene SIEMPRE terminado, para poder pasarlo tal cual a print().
-static char    linea[CAPACIDAD + 1];
-static uint8_t linea_n = 0;
-
-// Detector de flancos de las teclas imprimibles: qué caracteres había pulsados
-// en la vuelta anterior, para distinguir "se acaba de pulsar" de "sigue
-// pulsada". El driver no tiene historial: republica en cada barrido lo que ve.
-static char    last_word[MAX_TECLAS];
-static uint8_t last_word_n = 0;
-
-// Detector de flancos de las teclas de control. Backspace y Enter NO están en
-// estado.word: son dos flags que valen true mientras la tecla siga pulsada
-// (Keyboard.cpp:174-183). Sin flanco propio, mantener Enter medio segundo
-// entregaría una línea por cada vuelta de loop().
-static bool last_del   = false;
-static bool last_enter = false;
-
-// Fila (coordenada Y en píxeles) donde se dibuja la línea en curso. Baja al
-// confirmar: lo ya entregado queda encima, congelado.
-static int prompt_y = 0;
-
-
-// Declaraciones adelantadas: el compilador necesita la firma antes de verlas
-// usadas en loop(); las definiciones están más abajo.
-static bool insertar(char c);
-static bool borrar();
-static void confirmar();
-static void redibujar_linea();
-static int  filas_linea();
 
 
 // ---------------------------------------------------------------------------
@@ -267,263 +212,74 @@ void setup()
         boot_msg(RED, "SD FAIL (ver pista arriba)");
     }
 
+    // Radio y modo promiscuo. Va DESPUÉS de la SD: si el WiFi falla, el
+    // informe ya muestra el estado de todo lo anterior.
+    esp_err_t err = sniffer_begin(CANAL);
+    volcar_log_arranque();   // lo que el driver WiFi haya dicho al arrancar
+    if (err == ESP_OK) {
+        boot_msg(GREEN, "WiFi promisc ok, canal %u", CANAL);
+    } else {
+        // esp_err_to_name() traduce el código numérico (esp_err.h) a su nombre.
+        boot_msg(RED, "WiFi FAIL: %s", esp_err_to_name(err));
+    }
+
     // Heap libre: los bytes de RAM interna que quedan para reservas dinámicas
-    // (malloc/new) tras arrancar display, teclado y el driver de la SD. El
-    // StampS3 no tiene PSRAM, así que este número es todo el presupuesto del
-    // buffer de observaciones antes de volcarlas a la SD. El bloque libre más
-    // grande dice si ese heap está troceado: es el tamaño máximo de un único
-    // malloc que saldría bien ahora mismo.
+    // (malloc/new). El StampS3 no tiene PSRAM, así que este número es todo el
+    // presupuesto del buffer de observaciones. Se mide DESPUÉS del WiFi: el
+    // driver reserva sus buffers de RX/TX en el heap, y la diferencia con el
+    // hito 2 es lo que cuesta el radio. El bloque libre más grande dice si el
+    // heap está troceado: es el mayor malloc que saldría bien ahora.
     boot_msg(WHITE, "Heap: %u B (bloque max %u B)",
              (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getMaxAllocHeap());
 
-    // Una línea en blanco separa el informe de arranque del terminal.
-    M5.Display.println();
-    M5.Display.setTextSize(2);             // Escala del terminal
-    M5.Display.setTextColor(GREEN, BLACK);
-
-    // La línea en curso empieza justo debajo de la cabecera. getCursorY() ya
-    // tiene en cuenta el setTextSize() activo: si mañana cambias la escala,
-    // esto sigue cuadrando. Un número de píxeles a pelo, no.
-    prompt_y = M5.Display.getCursorY();
-
-    // El buffer arranca vacío pero terminado: print(linea) sobre un array sin
-    // '\0' leería memoria adyacente hasta encontrar un cero por casualidad.
-    linea[0] = '\0';
+    // Tiempo para leer el informe antes de pasar a la pantalla del sniffer.
+    // Sigue también en el monitor serie. Los contadores ya corren: el
+    // callback no depende de loop().
+    delay(4000);
+    M5.Display.fillScreen(BLACK);
+    M5.Display.setTextSize(2);
 }
 
 
 void loop()
 {
-    // M5Cardputer.update() llama a M5.update() y además dispara el barrido del
-    // teclado, que es lo que M5.update() por sí solo no hace:
-    //   - updateKeyList()   -> recorre los 8 pasos de la matriz. En cada paso
-    //                          baja una línea de selección y lee los 7 pines de
-    //                          entrada de golpe, empaquetados en un uint8_t.
-    //   - updateKeysState() -> traduce esas coordenadas físicas a caracteres,
-    //                          en dos pasadas: primero resuelve los
-    //                          modificadores (shift, ctrl...), después traduce
-    //                          las teclas imprimibles con ese estado ya fijado.
-    M5Cardputer.update();
+    // Una vez por segundo: leer, restar con la lectura anterior y pintar.
+    // millis() se compara por diferencia (ahora - ultimo), no por "ahora >
+    // siguiente", para que el desbordamiento de los 32 bits (a los ~49 días)
+    // no rompa la cuenta: la resta sin signo da el resultado correcto igual.
+    static uint32_t ultimo_ms = 0;
+    static SnifferCuentas antes = {0, 0, 0};
 
-    // keysState() devuelve el estado YA traducido de esta vuelta. Se toma por
-    // referencia const (&) para no copiar el struct (tres std::vector dentro)
-    // en cada iteración del loop.
-    const auto& estado = M5Cardputer.Keyboard.keysState();
+    uint32_t ahora_ms = millis();
+    if (ahora_ms - ultimo_ms < 1000) return;
+    ultimo_ms = ahora_ms;
 
-    // Dirty flag: marca si el buffer ha cambiado en esta vuelta. Mandar píxeles
-    // por SPI es lo más caro que hace este loop, así que el repintado se hace
-    // UNA vez al final y solo si algo cambió, no dentro de cada rama.
-    bool sucio = false;
+    SnifferCuentas ya = sniffer_leer();
 
+    // Tasa = diferencia entre dos lecturas. También sin signo: si un contador
+    // desborda (2^32 tramas, imposible en la práctica a estas tasas), la resta
+    // sigue dando el número de tramas del intervalo.
+    uint32_t d_mgmt = ya.mgmt - antes.mgmt;
+    uint32_t d_data = ya.data - antes.data;
+    uint32_t d_misc = ya.misc - antes.misc;
+    antes = ya;
 
-    // -----------------------------------------------------------------------
-    // BLOQUE A — Teclas imprimibles (incluido el espacio)
-    //
-    // Para cada carácter que el barrido ve ahora, comprobar si ya estaba en la
-    // vuelta anterior. Si no estaba, es un flanco de subida: tecla recién
-    // pulsada, y hay que atenderla una sola vez.
-    // -----------------------------------------------------------------------
-    for (size_t i = 0; i < estado.word.size(); i++) {
-        bool ya_estaba = false;
+    // Pintar es una transacción SPI con el ST7789 (GP-SPI3). Solo se hace
+    // aquí, en el núcleo 1: el callback nunca toca el display.
+    // printf con ancho fijo (%6lu) y color de fondo: cada carácter nuevo tapa
+    // al viejo, sin fillScreen ni parpadeo.
+    M5.Display.setCursor(0, 0);
+    M5.Display.setTextColor(CYAN, BLACK);
+    M5.Display.printf("Canal %-2u  t=%lus\n", CANAL, (unsigned long)(ahora_ms / 1000));
+    M5.Display.setTextColor(WHITE, BLACK);
+    M5.Display.printf("      /s   total\n");
+    M5.Display.setTextColor(GREEN, BLACK);
+    M5.Display.printf("MGMT %4lu %7lu\n", (unsigned long)d_mgmt, (unsigned long)ya.mgmt);
+    M5.Display.setTextColor(YELLOW, BLACK);
+    M5.Display.printf("DATA %4lu %7lu\n", (unsigned long)d_data, (unsigned long)ya.data);
+    M5.Display.setTextColor(MAGENTA, BLACK);
+    M5.Display.printf("MISC %4lu %7lu\n", (unsigned long)d_misc, (unsigned long)ya.misc);
 
-        for (uint8_t j = 0; j < last_word_n; j++) {
-            if (last_word[j] == estado.word[i]) {
-                ya_estaba = true;
-                break;
-            }
-        }
-
-        if (!ya_estaba) {
-            // insertar() devuelve false si el buffer estaba lleno y descartó el
-            // carácter. En ese caso nada ha cambiado y no hay que repintar: el
-            // OR acumulativo (|=) deja 'sucio' como estaba.
-            sucio |= insertar(estado.word[i]);
-        }
-    }
-
-    // Guardar el estado de esta vuelta para poder comparar en la siguiente.
-    // El recorte a MAX_TECLAS es el límite comentado arriba.
-    last_word_n = 0;
-    for (size_t i = 0; i < estado.word.size() && last_word_n < MAX_TECLAS; i++) {
-        last_word[last_word_n] = estado.word[i];
-        last_word_n++;
-    }
-
-
-    // -----------------------------------------------------------------------
-    // BLOQUE B — Teclas de control (Backspace y Enter)
-    //
-    // El mismo flanco de subida, pero sobre dos booleanos: interesa el paso de
-    // false a true, no el "está pulsada".
-    // -----------------------------------------------------------------------
-    if (estado.del && !last_del) {
-        sucio |= borrar();        // false si la línea ya estaba vacía
-    }
-
-    if (estado.enter && !last_enter) {
-        confirmar();
-        sucio = true;             // confirmar siempre cambia el estado visible
-    }
-
-    // Actualizar el estado anterior DESPUÉS de las comparaciones. Al revés, el
-    // valor de ahora y el "anterior" coincidirían siempre y no habría flanco.
-    last_del   = estado.del;
-    last_enter = estado.enter;
-
-
-    // -----------------------------------------------------------------------
-    // BLOQUE C — Reflejo en pantalla
-    //
-    // La pantalla no acumula: refleja el buffer, que es la única fuente de
-    // verdad. Solo se toca el bus SPI si algo ha cambiado.
-    // -----------------------------------------------------------------------
-    if (sucio) {
-        redibujar_linea();
-    }
-}
-
-
-// ---------------------------------------------------------------------------
-// BUFFER DE LÍNEA
-//
-// Las tres operaciones del editor. Devuelven si el estado cambió, para que el
-// llamante sepa si hace falta repintar.
-// ---------------------------------------------------------------------------
-
-// Ha llegado un carácter imprimible. Devuelve false si no cabía.
-static bool insertar(char c)
-{
-    // Lleno: linea_n ya vale CAPACIDAD, el último índice válido para un
-    // carácter es CAPACIDAD-1 y linea[CAPACIDAD] es el terminador. Escribir
-    // aquí sería salirse del array.
-    if (linea_n >= CAPACIDAD) {
-        return false;
-    }
-
-    linea[linea_n] = c;     // primera casilla libre
-    linea_n++;
-    linea[linea_n] = '\0';  // el terminador se corre una casilla
-    return true;
-}
-
-// Ha llegado un Backspace. Devuelve false si no había nada que borrar.
-static bool borrar()
-{
-    // linea_n es uint8_t: si restas con la línea vacía, 0 - 1 no da -1, da 255,
-    // y la siguiente escritura del terminador se va a linea[255], fuera del
-    // array (CAPACIDAD + 1 bytes); lo que hay ahí es de otras variables.
-    if (linea_n == 0) {
-        return false;
-    }
-
-    linea_n--;
-    linea[linea_n] = '\0';  // el carácter viejo no hace falta borrarlo: deja de
-                            // ser válido con que linea_n ya no lo alcance
-    return true;
-}
-
-// Ha llegado un Enter: la línea se da por terminada.
-static void confirmar()
-{
-    // Dibujar la línea ANTES de moverse de fila. No basta con confiar en que el
-    // repintado de la vuelta anterior ya la dejó pintada: si en esta misma
-    // vuelta han llegado un carácter y el Enter a la vez (el barrido ve las dos
-    // teclas), ese último carácter nunca se habría llegado a dibujar.
-    redibujar_linea();
-
-    // Bajar tantas filas como ocupa la línea recién confirmada: con el wrap ya
-    // no es siempre una. fontHeight() devuelve la altura del font con el
-    // setTextSize() actual ya aplicado. Se calcula ANTES de vaciar el buffer,
-    // porque filas_linea() depende de linea_n.
-    prompt_y += filas_linea() * M5.Display.fontHeight();
-
-    // Si la siguiente fila ya no cabe entera en el display, se limpia la
-    // pantalla y se empieza otra vez arriba.
-    //
-    // La alternativa real sería desplazar el contenido hacia arriba una fila,
-    // pero eso exige o bien leer de vuelta la GRAM del ST7789 (sin MISO: solo
-    // por SPI de 3 hilos, a 16 MHz, y sin comprobar en hardware) o mantener en
-    // RAM el historial de líneas y repintarlo entero. Lo segundo es lo correcto
-    // porque la fuente de verdad es el buffer, no la pantalla. Llega en el hito
-    // 2, cuando aparezca el store: entonces el historial ya existirá y esto se
-    // reescribe. Hasta entonces, limpiar es honesto y cuesta cuatro líneas.
-    if (prompt_y + M5.Display.fontHeight() > M5.Display.height()) {
-        M5.Display.fillScreen(BLACK);
-        prompt_y = 0;
-    }
-
-    // Vaciar el buffer para la línea siguiente. Una línea vacía también se
-    // confirma: Enter sin haber escrito nada es un salto de línea.
-    linea_n  = 0;
-    linea[0] = '\0';
-}
-
-
-// ---------------------------------------------------------------------------
-// REFLEJO EN PANTALLA
-// ---------------------------------------------------------------------------
-
-static void redibujar_linea()
-{
-    const int alto = M5.Display.fontHeight();
-
-    // Con el wrap la línea crece hacia abajo MIENTRAS se escribe, no solo al
-    // pulsar Enter. Si su última fila ya no cabe en el display, se aplica la
-    // misma política que en confirmar(): limpiar y recolocar la línea arriba.
-    // Cabe seguro: CAPACIDAD se eligió para que una línea llena no pase de
-    // media pantalla.
-    if (prompt_y + filas_linea() * alto > M5.Display.height()) {
-        M5.Display.fillScreen(BLACK);
-        prompt_y = 0;
-    }
-
-    // Borrar es pintar: el ST7789 no sabe qué es un carácter, solo recibe
-    // píxeles. fillRect manda el color de fondo, que es la única forma de hacer
-    // desaparecer el carácter que el Backspace acaba de quitar del buffer.
-    //
-    // Se limpia desde prompt_y hasta el BORDE INFERIOR del display, no solo las
-    // filas que la línea ocupa ahora. Si la línea tenía 21 caracteres (dos
-    // filas) y un Backspace la deja en 20 (una), limpiar "las filas actuales"
-    // dejaría el carácter 21 huérfano en la fila de abajo. Limpiar hasta abajo
-    // no necesita recordar cuántas filas ocupaba antes, y es correcto porque
-    // por debajo del prompt nunca hay nada que conservar: lo confirmado queda
-    // siempre encima.
-    M5.Display.fillRect(0, prompt_y, M5.Display.width(),
-                        M5.Display.height() - prompt_y, BLACK);
-
-    // Y volver a dibujarla entera desde el buffer. print() sin 'ln': el salto
-    // de fila al confirmar lo lleva prompt_y. Los saltos DENTRO de la línea los
-    // hace M5GFX por su cuenta (_textwrap_x, activo por defecto): al ir a
-    // dibujar un carácter que no cabe, pone el cursor en x = 0 y baja una fila.
-    M5.Display.setCursor(0, prompt_y);
-    M5.Display.print(linea);
-
-    // Por qué la línea entera y no solo el hueco del carácter borrado: cada
-    // operación de dibujo se traduce en fijar una ventana en el controlador
-    // (comandos CASET/RASET) y volcar el rectángulo de píxeles con RAMWR, ver
-    // docs/04-protocols/spi-st7789.md. Calcular el rectángulo exacto de un
-    // carácter es posible, pero con 80 caracteres como mucho a 40 MHz de SPI el
-    // ahorro no compensa la complejidad. Optimizar antes de medir es adivinar.
-}
-
-
-// Cuántas filas de pantalla ocupa la línea en curso.
-static int filas_linea()
-{
-    // La línea vacía también ocupa su fila: es donde está el prompt.
-    if (linea_n == 0) {
-        return 1;
-    }
-
-    // M5GFX salta de fila al ir a dibujar el carácter que NO cabe
-    // (LGFXBase.cpp:2413-2419: 'if (_cursor_x + w > rlimit)'), no al llenar la
-    // fila. Con 20 caracteres el último acaba justo en el píxel 240 y no hay
-    // salto: 1 fila. El 21 es el que abre la segunda.
-    //
-    // De ahí el -1 antes de dividir (la división entera trunca):
-    //   linea_n = 20 -> 19 / 20 = 0 -> 1 fila
-    //   linea_n = 21 -> 20 / 20 = 1 -> 2 filas
-    // Sin el -1, 20 / 20 + 1 daría 2 y confirmar() dejaría una fila en blanco
-    // de más cada vez que una línea llenara la fila exacta.
-    return (linea_n - 1) / COLS_FILA + 1;
+    Serial.printf("ch%u mgmt %lu/s data %lu/s misc %lu/s\n", CANAL,
+                  (unsigned long)d_mgmt, (unsigned long)d_data, (unsigned long)d_misc);
 }
