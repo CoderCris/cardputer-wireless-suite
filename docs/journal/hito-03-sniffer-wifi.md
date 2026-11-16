@@ -60,6 +60,17 @@ el driver WiFi). A los 4 s, la pantalla de contadores. Cerca de un router en el
 canal 6, MGMT debería rondar 10/s por cada AP (beacon cada 102,4 ms). DATA debería
 subir al usar un móvil en esa red.
 
+## 2026-11-16 — Roadmap por dependencias técnicas
+
+Sin código nuevo. [`../roadmap.md`](../roadmap.md) se reescribió: el hito 3 queda
+en cinco piezas (contadores, tubería de captura, cabecera 802.11 con tabla de AP,
+salto de canal, persistencia) y solo la última depende de la SD. Los hitos 2b y 6
+se retiran. El repo gana `README.md` y `LICENSE` (MIT), y la wiki una página
+`Roadmap`.
+
+**Al retomar:** flashear la pieza 1 y anotar el heap libre y el bloque máximo del
+informe de arranque; dimensionan la cola de la pieza 2.
+
 ## Pendiente de comprobar en hardware
 
 - [ ] Contadores por tipo en un canal fijo (pieza 1): informe de arranque, heap

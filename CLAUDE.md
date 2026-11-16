@@ -93,9 +93,9 @@ observar en el dispositivo. Los resultados los reporta el usuario.
   `docs/roadmap.md`; diario de cada hito en `docs/journal/`.
 - Commits granulares, uno por pieza funcional, con un mensaje que explique el
   concepto de hardware o de diseño, no solo el cambio.
-- `docs/02-abstraction-ladder.md` y los *gates* del roadmap son del enfoque
-  anterior: sirven como orden lógico de dependencias técnicas, ya no como
-  requisito de dominio del usuario.
+- El roadmap ordena los hitos por **dependencias técnicas** (reescrito el
+  2026-11-16). `docs/02-abstraction-ladder.md` es del enfoque anterior y ya no
+  condiciona el orden; se conserva como mapa de niveles de abstracción.
 
 ---
 

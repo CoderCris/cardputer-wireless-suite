@@ -37,7 +37,7 @@ StampS3 ([`../01-hardware/cardputer-map.md`](../01-hardware/cardputer-map.md)).
 capítulo de la MAC ni del PHY WiFi; Espressif los entrega como librerías
 precompiladas (`libnet80211.a`, `libpp.a`, `libesp_phy.a`, `libcoexist.a` en
 `tools/sdk/esp32s3/lib/`). El nivel más bajo accesible es la API `esp_wifi`. El
-hito 6 del roadmap puede bajar a ESP-IDF, pero no a registros.
+sniffer puede bajar a ESP-IDF, pero no a registros.
 
 ## El callback y su contexto de ejecución
 

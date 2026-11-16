@@ -6,6 +6,11 @@ eso sobre el código que se escribe hoy**.
 
 > No es un plan de trabajo. El plan de trabajo es [`roadmap.md`](roadmap.md), y
 > manda sobre este documento. Si algo de aquí contradice a un hito, gana el hito.
+>
+> Escrito con el enfoque de aprendizaje anterior al 2026-11-06. Las referencias a
+> niveles de la escalera, a los hitos 2b y 6 y al filtro «qué concepto enseña»
+> son de ese enfoque; el roadmap se reescribió por dependencias técnicas el
+> 2026-11-16 y este documento está pendiente de la misma revisión.
 
 ---
 
@@ -22,7 +27,7 @@ Tres piezas independientes, con dependencias distintas y niveles distintos de la
 | Pieza | Qué es | Nivel | Depende de |
 |-------|--------|-------|------------|
 | Plataforma de datos | Store compartido + navegador sobre el grafo | 1→2 | Hito 2 (persistencia) |
-| Enlace inter-MCU | Protocolo propio entre Cardputer y coprocesadores | 4 | Hito 6 (ESP-IDF) |
+| Enlace inter-MCU | Protocolo propio entre Cardputer y coprocesadores | 4 | Segundo MCU y Grove libre (ver roadmap) |
 | Carcasa | Integración física, alimentación, ergonomía | — | Las dos anteriores |
 
 ## Qué NO es
@@ -119,7 +124,7 @@ mueren la mayoría de estos proyectos.
 | I2C o UART para el enlace | Protocolo inter-MCU | Pendiente (ver el escenario del coprocesador con datos listos y el Cardputer ocupado) |
 | Nodo = entidad u observación | [`06-model/data-model.md`](06-model/data-model.md) | Pendiente |
 | Campo obligatorio de todo registro | Hito 2 | Pendiente |
-| MCU del coprocesador | Primera compra | Pendiente, gateada al hito 6 |
+| MCU del coprocesador | Enlace inter-MCU | Pendiente, hasta que una herramienta lo exija |
 
 ## Cómo concilia con lo anterior
 
@@ -133,6 +138,7 @@ Lo que sí cambia, y entra ya:
    pantalla como salida primaria; emite registros tipados al store, y la pantalla
    es un consumidor más. Detalle en [`06-model/data-model.md`](06-model/data-model.md).
 2. **El hito 8** deja de ser "menú de herramientas" y pasa a ser "navegador del
-   grafo". Ver el eje de plataforma en [`roadmap.md`](roadmap.md).
+   grafo". Ver las capas de plataforma en [`roadmap.md`](roadmap.md).
 3. **El orden de compras** se reordena: el coprocesador pasa a ser la primera,
-   por ser lo más barato que desbloquea un eje entero — pero sigue gateado.
+   por ser lo más barato que desbloquea un eje entero. (Revisado el 2026-11-16:
+   el roadmap antepone el receptor IR, que desbloquea un hito ya definido.)
